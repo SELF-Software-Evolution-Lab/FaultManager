@@ -1,0 +1,5 @@
+[
+    {"model": "iotfaults.devicetype", "pk": 1, "fields": {"name": "Flow Sensor"}}, 
+    {"model": "iotfaults.devicetype", "pk": 2, "fields": {"name": "Heat Sensor"}}, 
+    {"model": "iotfaults.devicetype", "pk": 3, "fields": {"name": "Light Sensor"}}   
+]

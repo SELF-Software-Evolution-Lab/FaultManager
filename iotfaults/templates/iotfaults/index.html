@@ -1,0 +1,41 @@
+{% extends 'iotfaults/layout.html' %}
+{% load staticfiles %}
+{% block header_content %}
+    <script
+   		   src="https://code.jquery.com/jquery-3.2.1.js"
+   		   integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+   		   crossorigin="anonymous">
+    </script>
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.13/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.12.4.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.13/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="{% static 'js/iotfaults/graphicsController.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+<h3 class="center-align red ighten-3">{{title}}</h3>
+<ul class="collection">
+    {% for alarm in alarms %}
+        <li class="collection-item"><a href="/iotfaults/details/{{alarm.id}}">{{alarm.type.name}}, {{alarm.deviceType.name}} {{alarm.device}}</a></li>
+    {% endfor %}
+</ul>
+<div id="graphPieFaultTypes" style="width:100%; height:400px;"></div>
+<div id="graphPieDeviceTypes" style="width:100%; height:400px;"></div>
+<div id="graphBarFaultTypesPerDevice" style="width:100%; height:400px;"></div>
+<div id="graphLineDeviceFaults" style="width:100%; height:400px;"></div>
+
+
+<script>
+    $(function () { 
+        paintGraphPieFaultTypes('{{dataGraphPieFaultTypes|safe}}');
+        paintGraphPieDeviceTypes('{{dataGraphPieDeviceTypes|safe}}');
+        paintGraphBarFaultTypesPerDevice('{{dataGraphBarFaultTypesDevice|safe}}');
+        paintGraphLineDeviceFaults('{{dataGraphLineDeviceFaults|safe}}');
+    });
+</script>
+
+{% endblock %}
+

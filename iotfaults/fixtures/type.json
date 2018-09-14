@@ -1,0 +1,7 @@
+[
+    {"model": "iotfaults.type", "pk": 1, "fields": {"name": "Unreachability"}}, 
+    {"model": "iotfaults.type", "pk": 2, "fields": {"name": "Out of Range"}}, 
+    {"model": "iotfaults.type", "pk": 3, "fields": {"name": "Node Failure"}}, 
+    {"model": "iotfaults.type", "pk": 4, "fields": {"name": "Configuration Error"}}, 
+    {"model": "iotfaults.type", "pk": 5, "fields": {"name": "State Mismatch"}}
+]
