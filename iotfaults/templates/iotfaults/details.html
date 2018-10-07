@@ -2,16 +2,13 @@
 {% extends 'iotfaults/layout.html' %}
 
 {% block content %}
-<h3 class="center-align red ighten-3">{{alarm.device}}</h3>
+<h3 class="center-align red ighten-3">{{event.url}}</h3>
 <div class="card">
     <div class="card-content">
-        {{alarm.deviceType.name}}
-    </div>
-    <div class="card-content">
-        {{alarm.type.name}}
+        {{event.type.name}}
     </div>
     <div class="card-action">
-        {{alarm.time}}
+        {{event.time}}
     </div>
 </div>
 <a href="/iotfaults" class="btn">Go Back</a>

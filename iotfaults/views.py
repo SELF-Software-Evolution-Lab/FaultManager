@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Alarm
+from .models import Event
 import json
 from django.db import connection
 from .utils.graphdata import Graphdata
@@ -9,9 +9,9 @@ from .utils.graphdata import Graphdata
 def getDataFaultTypes():
     with connection.cursor() as cursor:
         cursor.execute("SELECT iotfaults_type.name, count(0)"
-            + " FROM iotfaults_alarm"
+            + " FROM iotfaults_event"
             + " INNER JOIN iotfaults_type"
-            + " ON iotfaults_type.id = iotfaults_alarm.type_id"
+            + " ON iotfaults_type.id = iotfaults_event.type_id"
             + " GROUP BY type_id;")
         rows = cursor.fetchall()
         data = []
@@ -20,47 +20,12 @@ def getDataFaultTypes():
 
     return data    
 
-# Get data structure with information to build Fault Device Types with Faults Graph
-def getDataFaultDeviceTypes():
+# Get data structure with information to build Url per Fault Types Graph
+def getDataUrlFaults():
     with connection.cursor() as cursor:
-        cursor.execute("SELECT iotfaults_devicetype.name, count(0)"
-            + " FROM iotfaults_alarm"
-            + " INNER JOIN iotfaults_devicetype"
-            + " ON iotfaults_devicetype.id = iotfaults_alarm.deviceType_id"
-            + " GROUP BY deviceType_id;")
-        rows = cursor.fetchall()
-        data = []
-        for row in rows:
-            data.append({"name": row[0], "y": row[1]})
-
-    return data    
-
-# Get data structure with information to build Device per Fault Types Graph
-def getDataDeviceFaultTypes():
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT iotfaults_type.name, iotfaults_devicetype.name, count(0)"
-            + " FROM iotfaults_alarm"
-            + " INNER JOIN iotfaults_devicetype"
-            + " ON iotfaults_devicetype.id = iotfaults_alarm.deviceType_id"
-            + " INNER JOIN iotfaults_type"
-            + " ON iotfaults_type.id = iotfaults_alarm.type_id"
-            + " GROUP BY deviceType_id, type_id;")
-        rows = cursor.fetchall()
-        
-        graphData = Graphdata(0)
-        graphData.load(rows)
-        
-        data = {}
-        data["categories"] = graphData.get_categories()
-        data["series"] = graphData.get_series()
-    return data    
-    
-# Get data structure with information to build Device per Fault Types Graph
-def getDataDeviceFaults():
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT device, DATE(time), count(0)"
-            + " FROM iotfaults_alarm"
-            + " GROUP BY device, DATE(time);")
+        cursor.execute("SELECT url, DATE(time), count(0)"
+            + " FROM iotfaults_event"
+            + " GROUP BY url, DATE(time);")
         rows = cursor.fetchall()
         
         graphData = Graphdata(0)
@@ -73,21 +38,19 @@ def getDataDeviceFaults():
 
 # Create your views here.
 def index(request):
-    alarms = Alarm.objects.all()[:10]
+    events = Event.objects.all()[:10]
     context = {
-        'title': 'Latest alarms',
-        'alarms': alarms,
+        'title': 'Latest events',
+        'events': events,
         'dataGraphPieFaultTypes': json.dumps(getDataFaultTypes()) ,
-        'dataGraphPieDeviceTypes': json.dumps(getDataFaultDeviceTypes()) ,
-        'dataGraphBarFaultTypesDevice': json.dumps(getDataDeviceFaultTypes()) ,
-        'dataGraphLineDeviceFaults': json.dumps(getDataDeviceFaults()) ,
+        'dataGraphLineUrlFaults': json.dumps(getDataUrlFaults()) ,
     }
     return render(request, 'iotfaults/index.html', context)
 
 
 def details(request, id):
-    alarm = Alarm.objects.get(id=id) 
+    event = Event.objects.get(id=id) 
     context = {
-        'alarm': alarm,
+        'event': event,
     }
     return render(request, 'iotfaults/details.html', context)

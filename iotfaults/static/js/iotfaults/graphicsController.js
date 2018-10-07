@@ -91,16 +91,16 @@ function paintGraphBarFaultTypesPerDevice(data) {
 
 
 
-function paintGraphLineDeviceFaults(data) {
+function paintGraphLineUrlFaults(data) {
     var dataGrap = JSON.parse(data) 
-    var graphLineDeviceFaults = Highcharts.chart('graphLineDeviceFaults', {
+    var graphLineUrlFaults = Highcharts.chart('graphLineUrlFaults', {
         
         chart: {
             type: 'line'
         },
 
         title: {
-            text: 'Device Faults'
+            text: 'Url Faults'
         },
     
         xAxis: {
