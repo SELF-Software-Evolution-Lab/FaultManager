@@ -27,9 +27,9 @@
 
 
 <script>
-    $(function () { 
-        paintGraphPieFaultTypes('{{dataGraphPieFaultTypes|safe}}');
-        paintGraphLineUrlFaults('{{dataGraphLineUrlFaults|safe}}');
+    $(document).ready( function () {
+        $.getJSON("{%url 'iotfaults:datafaulttypes'%}").done(paintGraphPieFaultTypes);
+        $.getJSON("{%url 'iotfaults:dataurlfaults'%}").done(paintGraphLineUrlFaults);
     });
 </script>
 

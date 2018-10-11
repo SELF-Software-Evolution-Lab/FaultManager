@@ -20,5 +20,6 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^', include('iotfaults.urls')),
     url(r'^admin/', admin.site.urls),
-    url(r'^iotfaults/', include('iotfaults.urls')),
+    url(r'^iotfaults/', include(('iotfaults.urls', 'iotfaults'), namespace='iotfaults')),
+    url(r'^api-auth/', include('rest_framework.urls')),
 ]

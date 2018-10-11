@@ -1,4 +1,4 @@
-from datatable import Datatable
+from .datatable import Datatable
 import copy
 
 # Graphdata extends Datatable to hold data for graphics

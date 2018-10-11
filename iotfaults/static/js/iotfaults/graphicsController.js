@@ -28,7 +28,7 @@ function paintGraphPieFaultTypes(data) {
         },
         series: [{
             name: 'Share',
-            data: JSON.parse(data) 
+            data: data 
         }]
     });
 }
@@ -63,13 +63,12 @@ function paintGraphPieDeviceTypes(data) {
         },
         series: [{
             name: 'Share',
-            data: JSON.parse(data) 
+            data: data 
         }]
     });
 }
 
 function paintGraphBarFaultTypesPerDevice(data) {
-    var dataGrap = JSON.parse(data) 
 	var graphBarFaultTypesPerDevice = Highcharts.chart('graphBarFaultTypesPerDevice', {
 		chart: {
 			type: 'bar'
@@ -78,21 +77,20 @@ function paintGraphBarFaultTypesPerDevice(data) {
 			text: 'Fault Types Per Device'
 		},
 		xAxis: {
-			categories: dataGrap.categories
+			categories: data.categories
 		},
 		yAxis: {
 			title: {
 				text: 'Faults'
 			}
 		},
-		series: dataGrap.series
+		series: data.series
 	});
 }
 
 
 
 function paintGraphLineUrlFaults(data) {
-    var dataGrap = JSON.parse(data) 
     var graphLineUrlFaults = Highcharts.chart('graphLineUrlFaults', {
         
         chart: {
@@ -104,7 +102,7 @@ function paintGraphLineUrlFaults(data) {
         },
     
         xAxis: {
-                categories: dataGrap.categories
+                categories: data.categories
         },
         yAxis: {
             title: {
@@ -125,7 +123,7 @@ function paintGraphLineUrlFaults(data) {
             }
         },
     
-        series: dataGrap.series,
+        series: data.series,
     
         responsive: {
             rules: [{

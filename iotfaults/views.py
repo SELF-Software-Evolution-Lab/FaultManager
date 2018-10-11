@@ -4,6 +4,7 @@ from .models import Event
 import json
 from django.db import connection
 from .utils.graphdata import Graphdata
+from django.http import JsonResponse
 
 # Get data structure with information to build Fault Types Graph
 def getDataFaultTypes():
@@ -54,3 +55,11 @@ def details(request, id):
         'event': event,
     }
     return render(request, 'iotfaults/details.html', context)
+    
+def jsonDataFaultTypes(request):
+    data = getDataFaultTypes()
+    return JsonResponse(data, safe=False)
+    
+def jsonDataUrlFaults(request):
+    data = getDataUrlFaults()
+    return JsonResponse(data, safe=False)    

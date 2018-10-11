@@ -45,3 +45,7 @@ DumpData
 python manage.py dumpdata > ./iotfaults/fixtures/db.json
 python manage.py loaddata ./iotfaults/fixtures/type.json
 https://coderwall.com/p/mvsoyg/django-dumpdata-and-loaddata
+
+source ~/.virtualenvs/test/bin/activate
+
+python manage.py runserver $IP:$PORT
