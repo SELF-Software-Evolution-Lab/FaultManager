@@ -20,6 +20,7 @@ from . import views
 urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^details/(?P<id>\d+)/$', views.details, name='details'),
+    url(r'^staticgraphs$', views.staticGraphs, name='staticgraphs'),
     url(r'^datafaulttypes$', views.jsonDataFaultTypes, name='datafaulttypes'),
     url(r'^dataurlfaults$', views.jsonDataUrlFaults, name='dataurlfaults'),
 ]

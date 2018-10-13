@@ -37,17 +37,27 @@ def getDataUrlFaults():
         data["series"] = graphData.get_series()
     return data    
 
-# Create your views here.
+# View for dinamic graphics
 def index(request):
-    events = Event.objects.all()[:10]
+    #events = Event.objects.all()[:10]
     context = {
-        'title': 'Latest events',
-        'events': events,
-        'dataGraphPieFaultTypes': json.dumps(getDataFaultTypes()) ,
-        'dataGraphLineUrlFaults': json.dumps(getDataUrlFaults()) ,
+        'title': 'Dashboard',
+        #'events': events,
+        #'dataGraphPieFaultTypes': json.dumps(getDataFaultTypes()) ,
+        #'dataGraphLineUrlFaults': json.dumps(getDataUrlFaults()) ,
     }
     return render(request, 'iotfaults/index.html', context)
 
+# View for static graphics
+def staticGraphs(request):
+    #events = Event.objects.all()[:10]
+    context = {
+        'title': 'Dashboard',
+        #'events': events,
+        #'dataGraphPieFaultTypes': json.dumps(getDataFaultTypes()) ,
+        #'dataGraphLineUrlFaults': json.dumps(getDataUrlFaults()) ,
+    }
+    return render(request, 'iotfaults/static_graphs.html', context)
 
 def details(request, id):
     event = Event.objects.get(id=id) 
