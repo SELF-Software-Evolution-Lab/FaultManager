@@ -5,6 +5,8 @@ import json
 from django.db import connection
 from .utils.graphdata import Graphdata
 from django.http import JsonResponse
+from django.utils.safestring import mark_safe
+import channels.layers
 
 # Get data structure with information to build Fault Types Graph
 def getDataFaultTypes():
@@ -57,6 +59,15 @@ def staticGraphs(request):
         #'dataGraphPieFaultTypes': json.dumps(getDataFaultTypes()) ,
         #'dataGraphLineUrlFaults': json.dumps(getDataUrlFaults()) ,
     }
+    
+    print('Enviando al chat')
+    channel_layer = channels.layers.get_channel_layer()
+    from asgiref.sync import async_to_sync
+    async_to_sync(channel_layer.group_send)('chat_lobby', {
+                'type': 'chat_message',
+                'message': 'Prueba desde static'
+            })
+
     return render(request, 'iotfaults/static_graphs.html', context)
 
 def details(request, id):
@@ -73,3 +84,13 @@ def jsonDataFaultTypes(request):
 def jsonDataUrlFaults(request):
     data = getDataUrlFaults()
     return JsonResponse(data, safe=False)    
+    
+####### EXAMPLE WebSokects with Channels    
+
+def index_chat(request):
+    return render(request, 'iotfaults/index_chat.html', {})
+    
+def room(request, room_name):
+    return render(request, 'iotfaults/room.html', {
+        'room_name_json': mark_safe(json.dumps(room_name))
+    })    

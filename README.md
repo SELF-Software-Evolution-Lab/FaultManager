@@ -41,11 +41,31 @@ https://docs.djangoproject.com/en/1.9/intro/tutorial01/
 Visit http://docs.c9.io for support, or to learn more about using Cloud9 IDE.
 To watch some training videos, visit http://www.youtube.com/user/c9ide
 
-DumpData
-python manage.py dumpdata > ./iotfaults/fixtures/db.json
-python manage.py loaddata ./iotfaults/fixtures/type.json
-https://coderwall.com/p/mvsoyg/django-dumpdata-and-loaddata
-
+# Virtual Environment
 source ~/.virtualenvs/test/bin/activate
 
+# Python Interactive Shell
+python manage.py shell
+Exit: Ctrl-D
+
+# C9 MySql Database
+Start: mysql-ct start
+Client: mysql-ct cli
+
+# C9 Redis
+Start: sudo service redis-server start
+Client: redis-cli
+Prameters: Hostname - $IP (The same local IP as the application you run on Cloud9)
+           Port - 6379 (The default Redis port number)
+           Password - “” (No password since you can only access the DB from within the workspace)
+
+# DumpData
+Dump: python manage.py dumpdata > ./iotfaults/fixtures/db.json
+Load: python manage.py loaddata ./iotfaults/fixtures/type.json
+Info: https://coderwall.com/p/mvsoyg/django-dumpdata-and-loaddata
+
+# Run Python server
 python manage.py runserver $IP:$PORT
+
+# Mozilla Firefox Websokets
+Mozilla doen't allow WebSockets by default: about:config, network.websocket.allowInsecureFromHTTPS=True

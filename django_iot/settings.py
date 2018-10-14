@@ -25,13 +25,14 @@ SECRET_KEY = '6-8p*67f=(a6b_bew(v%g5gx9-@$s01da0#6scm=ga%la&zndf'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
     'iotfaults',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -73,6 +74,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'django_iot.wsgi.application'
 
+# Asyncronous Server Gateway Interface
+ASGI_APPLICATION = "django_iot.routing.application"
+
+# WebSocket Channels Communication Layers
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.environ["IP"], 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases

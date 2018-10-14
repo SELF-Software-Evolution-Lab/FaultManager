@@ -18,9 +18,24 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
+    # General index. Dynamic Graphics
     url(r'^$', views.index, name='index'),
+    
+    # Show all data in Events table
     url(r'^details/(?P<id>\d+)/$', views.details, name='details'),
+    
+    # Show Static Graphs
     url(r'^staticgraphs$', views.staticGraphs, name='staticgraphs'),
+    
+    # Get data of Fault types
     url(r'^datafaulttypes$', views.jsonDataFaultTypes, name='datafaulttypes'),
+
+    # Get data of Components with Faults
     url(r'^dataurlfaults$', views.jsonDataUrlFaults, name='dataurlfaults'),
+    
+    
+    #### EXAMple Channels
+    # Index Chat
+    url(r'^indexchat/$', views.index_chat, name='index_chat'),
+    url(r'^(?P<room_name>[^/]+)/$', views.room, name='room'),
 ]
