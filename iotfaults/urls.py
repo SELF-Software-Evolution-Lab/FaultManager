@@ -18,24 +18,30 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    # General index. Dynamic Graphics
-    url(r'^$', views.index, name='index'),
+    # General index. Real Time Graphics
+    url(r'^$', views.real_time, name='real_time'),
     
     # Show all data in Events table
     url(r'^details/(?P<id>\d+)/$', views.details, name='details'),
     
     # Show Static Graphs
-    url(r'^staticgraphs$', views.staticGraphs, name='staticgraphs'),
+    url(r'^analytics$', views.analytics, name='analytics'),
     
-    # Get data of Fault types
-    url(r'^datafaulttypes$', views.jsonDataFaultTypes, name='datafaulttypes'),
+    # Get data of Fault types since start date to end date
+    url(r'^fault-types/start/(?P<str_start_date>[^/]+)/end/(?P<str_end_date>[^/]+)$', views.jsonDataFaultTypes, name='datafaulttypes'),
 
-    # Get data of Components with Faults
-    url(r'^dataurlfaults$', views.jsonDataUrlFaults, name='dataurlfaults'),
+    # Get data of Components with Faults since start date to end date
+    url(r'^component-faults/start/(?P<str_start_date>[^/]+)/end/(?P<str_end_date>[^/]+)$', views.component_faults_start_end, name='component_faults_start_end'),
+    
+    # Get data of Components with Faults last quantity of time
+    url(r'^component-faults/quantity/(?P<str_quantity>[^/]+)/date-type/(?P<str_date_type>[^/]+)$', views.component_faults_last_interval, name='component_faults_last_interval'),
+    
+    # Get data of Components with Location with Faults last quantity of time
+    url(r'^component-location/quantity/(?P<str_quantity>[^/]+)/date-type/(?P<str_date_type>[^/]+)$', views.component_location_last_interval, name='component_location_last_interval'),
     
     
     #### EXAMple Channels
     # Index Chat
     url(r'^indexchat/$', views.index_chat, name='index_chat'),
-    url(r'^(?P<room_name>[^/]+)/$', views.room, name='room'),
+    #url(r'^(?P<room_name>[^/]+)/$', views.room, name='room'),
 ]

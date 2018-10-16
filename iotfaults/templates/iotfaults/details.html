@@ -2,8 +2,14 @@
 {% extends 'iotfaults/layout.html' %}
 
 {% block content %}
-<h3 class="center-align red ighten-3">{{event.url}}</h3>
+<h3 class="center-align red ighten-3">{{event.component.url}}</h3>
 <div class="card">
+    <div class="card-content">
+        {{event.component.latitude}}
+    </div>
+    <div class="card-content">
+        {{event.component.longitude}}
+    </div>
     <div class="card-content">
         {{event.type.name}}
     </div>

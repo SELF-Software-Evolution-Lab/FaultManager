@@ -1,0 +1,7 @@
+[
+    {"model": "iotfaults.component", "pk": 1, "fields": {"name": "Component 1", "url": "http://iot.net/33c9a023d3cfaef3", "latitude": "4.57364500", "longitude": "-74.08455000"}}, 
+    {"model": "iotfaults.component", "pk": 2, "fields": {"name": "Component 2", "url": "http://iot.net/14cce53d2d3724f8", "latitude": "4.57238100", "longitude": "-74.08298300"}}, 
+    {"model": "iotfaults.component", "pk": 3, "fields": {"name": "Component 3", "url": "http://iot.net/c7ed445e2935e688", "latitude": "4.57553400", "longitude": "-74.08596700"}}, 
+    {"model": "iotfaults.component", "pk": 4, "fields": {"name": "Component 4", "url": "http://iot.net/04ea3e9fe03095c0", "latitude": "4.57410100", "longitude": "-74.08334200"}}, 
+    {"model": "iotfaults.component", "pk": 5, "fields": {"name": "Component 5", "url": "http://iot.net/ccd7bb2392f7b7e1", "latitude": "4.57421800", "longitude": "-74.08677100"}}, 
+]

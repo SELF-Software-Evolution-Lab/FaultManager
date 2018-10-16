@@ -1,0 +1,158 @@
+{% extends 'iotfaults/layout.html' %}
+{% load staticfiles %}
+
+
+{% block header_content %}
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="{% static 'js/iotfaults/graphicsController.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
+    <script>
+        function refreshGraphPieFaultTypes() {
+            url = "{%url 'iotfaults:datafaulttypes' 'start_date_placeholder' 'end_date_placeholder' %}"
+            startdate = moment($('#dtpPieStartDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
+            enddate = moment($('#dtpPieEndDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
+            url = url.replace('start_date_placeholder', startdate).replace('end_date_placeholder', enddate)
+            $.getJSON(url).done(paintGraphPieFaultTypes);
+        };
+        
+        function refreshGraphLineUrlFaults() {
+            url = "{%url 'iotfaults:component_faults_start_end' 'start_date_placeholder' 'end_date_placeholder' %}"
+            startdate = moment($('#dtpLineStartDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
+            enddate = moment($('#dtpLineEndDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
+            url = url.replace('start_date_placeholder', startdate).replace('end_date_placeholder', enddate)
+            $.getJSON(url).done(paintGraphLineUrlFaults);
+        };
+
+    </script>
+    
+{% endblock %}
+
+
+{% block content %}
+    <br>
+    <div class="row">
+        <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="fa fa-pie-chart fa-fw"></i> Fault Types
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class='col-xs-6'>
+                            <div class="form-group">
+                                <div class='input-group date' id='dtpPieStartDate'>
+                                    <input type='text' class="form-control" />
+                                    <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='col-xs-6'>
+                            <div class="form-group">
+                                <div class='input-group date' id='dtpPieEndDate'>
+                                    <input type='text' class="form-control" />
+                                    <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <script type="text/javascript">
+                            $(function () {
+                                t = moment()
+                                $('#dtpPieStartDate').datetimepicker({
+                                    useCurrent: false, //Important! See issue #1075
+                                    format: 'DD-MM-YYYY hh:mm A',
+                                    defaultDate: t.clone().subtract(1, 'month')
+                                });
+                                $('#dtpPieEndDate').datetimepicker({
+                                    useCurrent: false, //Important! See issue #1075
+                                    format: 'DD-MM-YYYY hh:mm A',
+                                    defaultDate: t
+                                });
+                                $("#dtpPieStartDate").on("dp.change", function (e) {
+                                    $('#dtpPieEndDate').data("DateTimePicker").minDate(e.date);
+                                    refreshGraphPieFaultTypes();
+                                });
+                                $("#dtpPieEndDate").on("dp.change", function (e) {
+                                    $('#dtpPieStartDate').data("DateTimePicker").maxDate(e.date);
+                                    refreshGraphPieFaultTypes();
+                                });
+                            });
+                        </script>                    
+                    </div>
+                    <div class="row">
+                        <div id="graphPieFaultTypes" style="width:100%; height:400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-line-chart fa-fw"></i> Components Faults
+            </div>
+            <div class="panel-body">
+                    <div class="row">
+                        <div class='col-xs-6'>
+                            <div class="form-group">
+                                <div class='input-group date' id='dtpLineStartDate'>
+                                    <input type='text' class="form-control" />
+                                    <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='col-xs-6'>
+                            <div class="form-group">
+                                <div class='input-group date' id='dtpLineEndDate'>
+                                    <input type='text' class="form-control" />
+                                    <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <script type="text/javascript">
+                            $(function () {
+                                t = moment()
+                                $('#dtpLineStartDate').datetimepicker({
+                                    useCurrent: false, //Important! See issue #1075
+                                    format: 'DD-MM-YYYY hh:mm A',
+                                    defaultDate: t.clone().subtract(1, 'month')
+                                });
+                                $('#dtpLineEndDate').datetimepicker({
+                                    useCurrent: false, //Important! See issue #1075
+                                    format: 'DD-MM-YYYY hh:mm A',
+                                    defaultDate: t
+                                });
+                                $("#dtpLineStartDate").on("dp.change", function (e) {
+                                    $('#dtpLineEndDate').data("DateTimePicker").minDate(e.date);
+                                    refreshGraphLineUrlFaults();
+                                });
+                                $("#dtpLineEndDate").on("dp.change", function (e) {
+                                    $('#dtpLineStartDate').data("DateTimePicker").maxDate(e.date);
+                                    refreshGraphLineUrlFaults();
+                                });
+                            });
+                        </script>                    
+                    </div>
+                    <div class="row">
+                        <div id="graphLineUrlFaults" style="width:100%; height:400px;"></div>
+                    </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            refreshGraphPieFaultTypes();
+            refreshGraphLineUrlFaults();
+        });
+    </script>
+
+{% endblock %}

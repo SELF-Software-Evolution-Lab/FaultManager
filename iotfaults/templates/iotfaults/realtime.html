@@ -1,0 +1,199 @@
+{% extends 'iotfaults/layout.html' %}
+{% load staticfiles %}
+
+
+{% block header_content %}
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="{% static 'js/iotfaults/graphicsController.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
+    <script>
+        function refreshMapComponentLocation() {
+            url = "{%url 'iotfaults:component_location_last_interval' 'quantity_placeholder' 'date_type_placeholder' %}"
+            quantity = $( "#sQuantityComponentLocation" ).val(); 
+            datetype = $( "#sDateTypeComponentLocation" ).val(); 
+            url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype)
+            $.getJSON(url).done(paintMapComponentLocation);
+        };
+        
+        function refreshGraphLineUrlFaults() {
+            url = "{%url 'iotfaults:component_faults_last_interval' 'quantity_placeholder' 'date_type_placeholder' %}"
+            quantity = $( "#sQuantityComponentFaults" ).val(); 
+            datetype = $( "#sDateTypeComponentFaults" ).val(); 
+            url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype)
+            $.getJSON(url).done(paintGraphLineUrlFaults);
+        };
+
+    </script>
+
+{% endblock %}
+
+
+{% block content %}
+    <br>
+    <div class="row">
+        <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="fa fa-pie-chart fa-fw"></i> Fault Types
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class='col-xs-1'>
+                            <label for="sQuantityComponentLocation">Last:</label>
+                        </div>
+                        <div class='col-xs-2'>
+                            <select id="sQuantityComponentLocation" class="form-control selcls"></select>
+                        </div>
+                        <div class='col-xs-2'>
+                            <select id="sDateTypeComponentLocation" class="form-control selcls">
+                                <option value="Years">Years</option>
+                                <option value="Months">Months</option>
+                                <option value="Weeks">Weeks</option>
+                                <option value="Days" selected>Days</option>
+                                <option value="Hours" >Hours</option>
+                                <option value="Minutes">Minutes</option>
+                                <option value="Seconds">Seconds</option>
+                            </select>
+                        </div>
+                        <script type="text/javascript">
+                            $(function () {
+                                var options = "";
+                                for(var i=1; i <=30; i++) {
+                                  if (i == 24) { selected = "selected"} else {selected = ""};
+                                  options += "<option value=" + i + " " + selected + ">"+ i +"</option>";
+                                }
+                                $("#sQuantityComponentLocation").append( options );
+                                $("#sQuantityComponentLocation").on('change', function() {
+                                    refreshMapComponentLocation();
+                                });
+                                $("#sDateTypeComponentLocation").on('change', function() {
+                                    refreshMapComponentLocation();
+                                });
+                            });
+                        </script>                    
+                    </div>
+                    <div class="row">
+                        <div id="map-container" class="z-depth-1" style="height: 500px"></div>
+                        <script>
+                            var map;
+                            var markers = [];
+
+                            function initMap() {
+                                map = new google.maps.Map(document.getElementById('map-container'), {zoom: 17});
+                            }
+                            
+                            // Adds a marker to the map and push to the array.
+                            function addMarker(position, title) {
+                                var marker = new google.maps.Marker({
+                                    position: position, 
+                                    animation: google.maps.Animation.DROP, 
+                                    title: title, 
+                                    map: map
+                                });
+                                markers.push(marker);
+                            }
+                            
+                            // Sets the map on all markers in the array.
+                            function setMapOnAll(map) {
+                                for (var i = 0; i < markers.length; i++) {
+                                    markers[i].setMap(map);
+                                }
+                            }
+                        
+                            // Removes the markers from the map, but keeps them in the array.
+                            function clearMarkers() {
+                                setMapOnAll(null);
+                            }
+                        
+                            // Shows any markers currently in the array.
+                            function showMarkers() {
+                                setMapOnAll(map);
+                            }
+                        
+                            // Deletes all markers in the array by removing references to them.
+                            function deleteMarkers() {
+                                clearMarkers();
+                                markers = [];
+                            }
+                            
+                            function paintMapComponentLocation(data) {
+                                deleteMarkers();
+                                var bounds = new google.maps.LatLngBounds();
+                                var len = data.length;
+                                for (i = 0; i < len; i++) {
+                                    obj = data[i];
+                                    title = 'Id: ' + obj["id"] +
+                                        '\nName: ' + obj["name"] +
+                                        '\nUrl: ' + obj["url"] +
+                                        '\nFaults: ' + obj["faults"];
+                                    position = new google.maps.LatLng(parseFloat(obj["latitude"]), parseFloat(obj["longitude"]));
+                                    addMarker(position, title);
+                                    bounds.extend(position);
+                                } 
+                                map.fitBounds(bounds);
+                            }
+                            
+                        </script>
+                        <script src="https://maps.googleapis.com/maps/api/js?key={{google_maps_key}}&callback=initMap" async defer></script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-line-chart fa-fw"></i> Components Faults
+            </div>
+            <div class="panel-body">
+                    <div class="row">
+                        <div class='col-xs-1'>
+                            <label for="sQuantityComponentFaults">Last:</label>
+                        </div>
+                        <div class='col-xs-2'>
+                            <select id="sQuantityComponentFaults" class="form-control selcls"></select>
+                        </div>
+                        <div class='col-xs-2'>
+                            <select id="sDateTypeComponentFaults" class="form-control selcls">
+                                <option value="Years">Years</option>
+                                <option value="Months">Months</option>
+                                <option value="Weeks">Weeks</option>
+                                <option value="Days">Days</option>
+                                <option value="Hours" selected>Hours</option>
+                                <option value="Minutes">Minutes</option>
+                                <option value="Seconds">Seconds</option>
+                            </select>
+                        </div>
+                        <script type="text/javascript">
+                            $(function () {
+                                var options = "";
+                                for(var i=1; i <=30; i++) {
+                                  if (i == 24) { selected = "selected"} else {selected = ""};
+                                  options += "<option value=" + i + " " + selected + ">"+ i +"</option>";
+                                }
+                                $("#sQuantityComponentFaults").append( options );
+                                $("#sQuantityComponentFaults").on('change', function() {
+                                    refreshGraphLineUrlFaults();
+                                });
+                                $("#sDateTypeComponentFaults").on('change', function() {
+                                    refreshGraphLineUrlFaults();
+                                });
+                            });
+                        </script>                    
+                    </div>
+                    <div class="row">
+                        <div id="graphLineUrlFaults" style="width:100%; height:400px;"></div>
+                    </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            refreshMapComponentLocation();
+            refreshGraphLineUrlFaults();
+        });
+    </script>
+
+{% endblock %}

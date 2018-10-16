@@ -49,8 +49,8 @@ python manage.py shell
 Exit: Ctrl-D
 
 # C9 MySql Database
-Start: mysql-ct start
-Client: mysql-ct cli
+Start: mysql-ctl start
+Client: mysql-ctl cli
 
 # C9 Redis
 Start: sudo service redis-server start
