@@ -1,35 +1,197 @@
-{% extends 'iotfaults/layout.html' %}
+{% extends 'iotfaults/dashboardlayout.html' %}
 {% load staticfiles %}
-
 
 {% block header_content %}
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="{% static 'js/iotfaults/graphicsController.js' %}"></script>
+    <script src="{% static 'js/iotfaults/reconnecting-websocket.js' %}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
     <script>
-        function refreshMapComponentLocation() {
-            url = "{%url 'iotfaults:component_location_last_interval' 'quantity_placeholder' 'date_type_placeholder' %}"
-            quantity = $( "#sQuantityComponentLocation" ).val(); 
-            datetype = $( "#sDateTypeComponentLocation" ).val(); 
-            url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype)
-            $.getJSON(url).done(paintMapComponentLocation);
-        };
+        /* global google, paintGraphLineUrlFaults */
         
-        function refreshGraphLineUrlFaults() {
-            url = "{%url 'iotfaults:component_faults_last_interval' 'quantity_placeholder' 'date_type_placeholder' %}"
-            quantity = $( "#sQuantityComponentFaults" ).val(); 
-            datetype = $( "#sDateTypeComponentFaults" ).val(); 
-            url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype)
-            $.getJSON(url).done(paintGraphLineUrlFaults);
-        };
+        /** Var that holds Google map */
+        var map;
+        /** Var that holds all Google markers to show */
+        var markers = [];
+        
+        /** 
+         * Initialize map. Designed to be callbackk in google API.
+         */
+        function initMap() {
+            map = new google.maps.Map(
+                document.getElementById('map-container'), {zoom: 17});
+        }
 
+        /** 
+         * Adds a marker to the map and push to the array.
+         */
+        function addMarker(position, title) {
+            var marker = new google.maps.Marker({
+                position: position, 
+                title: title, 
+                map: map
+            });
+            markers.push(marker);
+        }
+        
+        /** 
+         * Sets the map on all markers in the array.
+         */
+        function setMapOnAll(map) {
+            for (var i = 0; i < markers.length; i++) {
+                markers[i].setMap(map);
+            }
+        }
+    
+        /** 
+         * Removes the markers from the map, but keeps them in the array.
+         */
+        function clearMarkers() {
+            setMapOnAll(null);
+        }
+    
+        // /** 
+        //  * Shows any markers currently in the array.
+        //  */
+        // function showMarkers() {
+        //    setMapOnAll(map);
+        // }
+    
+        /** 
+         * Deletes all markers in the array by removing references to them.
+         */
+        function deleteMarkers() {
+            clearMarkers();
+            markers = [];
+        }
+        
+        /** 
+         * Paint map component with markers in data.
+         * @param {list:obj} data
+         */
+        function paintMapComponentLocation(data) {
+            deleteMarkers();
+            var bounds = new google.maps.LatLngBounds();
+            var len = data.length;
+            for (var i = 0; i < len; i++) {
+                var obj = data[i];
+                var title = 'Id: ' + obj["id"] +
+                    '\nName: ' + obj["name"] +
+                    '\nUrl: ' + obj["url"] +
+                    '\nFaults: ' + obj["faults"];
+                var position = new google.maps.LatLng(
+                    parseFloat(obj["latitude"]), parseFloat(obj["longitude"]));
+                addMarker(position, title);
+                bounds.extend(position);
+            } 
+            map.fitBounds(bounds);
+        }
+        
+        /** 
+         * Open Url on new window.
+         * @param {url} urlToOpen - Url to open
+         */
+        function openOnNewWindow(urlToOpen) {
+            window.open(window.location.origin + urlToOpen, '_blank');
+        }
+    
+        /** 
+         * Refresh map component location.
+         */
+        function refreshMapComponentLocation() {
+            var url = "{% url 'iotfaults:json_components_detail_count_last' 'quantity_placeholder' 'date_type_placeholder' %}";
+            var quantity = $( "#sQuantityComponentLocation" ).val(); 
+            var datetype = $( "#sDateTypeComponentLocation" ).val(); 
+            url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype);
+            $.getJSON(url).done(paintMapComponentLocation);
+        }
+        
+        /** 
+         * Refresh graph line Url Faults.
+         */
+        function refreshGraphLineUrlFaults() {
+            var url = "{% url 'iotfaults:json_components_count_last' 'quantity_placeholder' 'date_type_placeholder' %}";
+            var quantity = $( "#sQuantityComponentFaults" ).val(); 
+            var datetype = $( "#sDateTypeComponentFaults" ).val(); 
+            url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype);
+            $.getJSON(url).done(paintGraphLineUrlFaults);
+        }
+        
+        /** 
+         * Refresh all graps.
+         */
+        function refreshAllGraps() {
+            refreshMapComponentLocation();
+            refreshGraphLineUrlFaults();
+        }
+        
+        /** 
+         * Get Event WebSocket path.
+         */
+        function getEventWebSocketPath() {
+            var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+            var ws_path = ws_scheme + '://' + window.location.host +
+                '/ws/iotfaults/event/';	
+            return ws_path;
+        }
+
+        /* global ReconnectingWebSocket*/
+        /** 
+         * Configure Event WebSocket.
+         * @listens event:onmessage
+         * @listens event:onclose
+         */
+        function getEventWebSocket() {
+            var ws_path = getEventWebSocketPath();
+            
+            //var webSocket = new WebSocket(ws_path);
+            var webSocket = new ReconnectingWebSocket(ws_path);
+            webSocket.debug = true;
+            webSocket.timeoutInterval = 5400;
+            webSocket.maxReconnectAttempts = 10;
+        
+            webSocket.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                var message = data['message'];
+                if (message == 'savedEvent') {
+                    setTimeout(refreshAllGraps, 0);
+                }
+            };
+        
+            webSocket.onclose = function(e) {
+                console.error('Event socket closed unexpectedly');
+            };
+            
+            return webSocket;
+        }
+
+        /** Var that holds Event Web socket */
+        /* exported eventWebSocket */
+        var eventWebSocket;
+        
+        function connectToEventWebSocket() {
+            eventWebSocket = getEventWebSocket();
+        }
+        
+        /** 
+         * Mark and option as selected.
+         * @params {element} selectComponent
+         * @params {string} optionValue
+         */
+        function markOptionAsSelected(selectComponent, optionValue) {
+            var opt = $("select#" + selectComponent[0].id + " option[value=" + optionValue + "]"),
+            html = $("<div>").append(opt.clone()).html();
+            html = html.replace(/\>/, ' selected="selected">');
+            opt.replaceWith(html);
+        }
+        
     </script>
 
 {% endblock %}
 
 
-{% block content %}
+{% block dashboard_content %}
     <br>
     <div class="row">
         <div class="row">
@@ -50,91 +212,35 @@
                                 <option value="Years">Years</option>
                                 <option value="Months">Months</option>
                                 <option value="Weeks">Weeks</option>
-                                <option value="Days" selected>Days</option>
-                                <option value="Hours" >Hours</option>
+                                <option value="Days">Days</option>
+                                <option value="Hours">Hours</option>
                                 <option value="Minutes">Minutes</option>
                                 <option value="Seconds">Seconds</option>
                             </select>
                         </div>
                         <script type="text/javascript">
+                            /* global refreshMapComponentLocation, markOptionAsSelected */
                             $(function () {
                                 var options = "";
-                                for(var i=1; i <=30; i++) {
-                                  if (i == 24) { selected = "selected"} else {selected = ""};
-                                  options += "<option value=" + i + " " + selected + ">"+ i +"</option>";
+                                for(var i=1; i <=60; i++) {
+                                  options += "<option value=" + i + ">"+ i +"</option>";
                                 }
-                                $("#sQuantityComponentLocation").append( options );
-                                $("#sQuantityComponentLocation").on('change', function() {
+                                const sQuantityComponentLocation = $("#sQuantityComponentLocation");
+                                const sDateTypeComponentLocation = $("#sDateTypeComponentLocation");
+                                sQuantityComponentLocation.append( options );
+                                sQuantityComponentLocation.on('change', function() {
                                     refreshMapComponentLocation();
                                 });
-                                $("#sDateTypeComponentLocation").on('change', function() {
+                                sDateTypeComponentLocation.on('change', function() {
                                     refreshMapComponentLocation();
                                 });
+                                markOptionAsSelected(sQuantityComponentLocation, "5");
+                                markOptionAsSelected(sDateTypeComponentLocation, "Minutes") 
                             });
                         </script>                    
                     </div>
                     <div class="row">
                         <div id="map-container" class="z-depth-1" style="height: 500px"></div>
-                        <script>
-                            var map;
-                            var markers = [];
-
-                            function initMap() {
-                                map = new google.maps.Map(document.getElementById('map-container'), {zoom: 17});
-                            }
-                            
-                            // Adds a marker to the map and push to the array.
-                            function addMarker(position, title) {
-                                var marker = new google.maps.Marker({
-                                    position: position, 
-                                    animation: google.maps.Animation.DROP, 
-                                    title: title, 
-                                    map: map
-                                });
-                                markers.push(marker);
-                            }
-                            
-                            // Sets the map on all markers in the array.
-                            function setMapOnAll(map) {
-                                for (var i = 0; i < markers.length; i++) {
-                                    markers[i].setMap(map);
-                                }
-                            }
-                        
-                            // Removes the markers from the map, but keeps them in the array.
-                            function clearMarkers() {
-                                setMapOnAll(null);
-                            }
-                        
-                            // Shows any markers currently in the array.
-                            function showMarkers() {
-                                setMapOnAll(map);
-                            }
-                        
-                            // Deletes all markers in the array by removing references to them.
-                            function deleteMarkers() {
-                                clearMarkers();
-                                markers = [];
-                            }
-                            
-                            function paintMapComponentLocation(data) {
-                                deleteMarkers();
-                                var bounds = new google.maps.LatLngBounds();
-                                var len = data.length;
-                                for (i = 0; i < len; i++) {
-                                    obj = data[i];
-                                    title = 'Id: ' + obj["id"] +
-                                        '\nName: ' + obj["name"] +
-                                        '\nUrl: ' + obj["url"] +
-                                        '\nFaults: ' + obj["faults"];
-                                    position = new google.maps.LatLng(parseFloat(obj["latitude"]), parseFloat(obj["longitude"]));
-                                    addMarker(position, title);
-                                    bounds.extend(position);
-                                } 
-                                map.fitBounds(bounds);
-                            }
-                            
-                        </script>
                         <script src="https://maps.googleapis.com/maps/api/js?key={{google_maps_key}}&callback=initMap" async defer></script>
                     </div>
                 </div>
@@ -160,25 +266,30 @@
                                 <option value="Months">Months</option>
                                 <option value="Weeks">Weeks</option>
                                 <option value="Days">Days</option>
-                                <option value="Hours" selected>Hours</option>
+                                <option value="Hours">Hours</option>
                                 <option value="Minutes">Minutes</option>
                                 <option value="Seconds">Seconds</option>
                             </select>
                         </div>
                         <script type="text/javascript">
                             $(function () {
+                                /* global refreshGraphLineUrlFaults, markOptionAsSelected */
                                 var options = "";
-                                for(var i=1; i <=30; i++) {
-                                  if (i == 24) { selected = "selected"} else {selected = ""};
-                                  options += "<option value=" + i + " " + selected + ">"+ i +"</option>";
+                                for(var i=1; i <=60; i++) {
+                                    options += "<option value=" + i + ">"+ i +"</option>";
                                 }
-                                $("#sQuantityComponentFaults").append( options );
-                                $("#sQuantityComponentFaults").on('change', function() {
+
+                                const sQuantityComponentFaults = $("#sQuantityComponentFaults");
+                                const sDateTypeComponentFaults = $("#sDateTypeComponentFaults");
+                                sQuantityComponentFaults.append( options );
+                                sQuantityComponentFaults.on('change', function() {
                                     refreshGraphLineUrlFaults();
                                 });
-                                $("#sDateTypeComponentFaults").on('change', function() {
+                                sDateTypeComponentFaults.on('change', function() {
                                     refreshGraphLineUrlFaults();
                                 });
+                                markOptionAsSelected(sQuantityComponentFaults, "5");
+                                markOptionAsSelected(sDateTypeComponentFaults, "Minutes") 
                             });
                         </script>                    
                     </div>
@@ -188,11 +299,11 @@
             </div>
         </div>
     </div>
-    
     <script>
+        /* global connectToEventWebSocket, refreshAllGraps */
         $(document).ready(function() {
-            refreshMapComponentLocation();
-            refreshGraphLineUrlFaults();
+            connectToEventWebSocket();
+            refreshAllGraps();
         });
     </script>
 

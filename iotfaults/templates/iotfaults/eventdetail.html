@@ -1,0 +1,112 @@
+{% extends 'iotfaults/layout.html' %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <h1 class="page-header">Fault Detail</h1>
+        </div>
+        <br>
+        <div class="row">
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-cogs fa-fw"></i> Component
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Id:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.component.id}}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Name:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.component.name}}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Url:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.component.url}}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Latitude:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.component.latitude}}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Longitude:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.component.longitude}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-eye fa-fw"></i> Type
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Id:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.type.id}}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Name:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.type.name}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-clock-o fa-fw"></i> Fault
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Id:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.id}}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class='col-xs-2'>
+                                <b>Time:</b>
+                            </div>
+                            <div class='col-xs-4'>
+                                {{event.time}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

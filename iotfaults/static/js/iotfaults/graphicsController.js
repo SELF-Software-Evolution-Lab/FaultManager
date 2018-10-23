@@ -6,9 +6,9 @@ function paintGraphPieFaultTypes(data) {
             plotShadow: false,
             type: 'pie'
         },
-        title: {
-            text: 'Fault Types'
-        },
+		title: {
+			text: ''
+		},
         tooltip: {
             pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
         },
@@ -41,9 +41,9 @@ function paintGraphPieDeviceTypes(data) {
             plotShadow: false,
             type: 'pie'
         },
-        title: {
-            text: 'Device Types with Faults'
-        },
+		title: {
+			text: ''
+		},
         tooltip: {
             pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
         },
@@ -74,7 +74,7 @@ function paintGraphBarFaultTypesPerDevice(data) {
 			type: 'bar'
 		},
 		title: {
-			text: 'Fault Types Per Device'
+			text: ''
 		},
 		xAxis: {
 			categories: data.categories
@@ -96,11 +96,9 @@ function paintGraphLineUrlFaults(data) {
         chart: {
             type: 'line'
         },
-
-        title: {
-            text: 'Url Faults'
-        },
-    
+		title: {
+			text: ''
+		},
         xAxis: {
                 categories: data.categories
         },
@@ -117,6 +115,7 @@ function paintGraphLineUrlFaults(data) {
     
         plotOptions: {
             line: {
+                animation: false,
                 dataLabels: {
                     enabled: true
                 }
@@ -142,4 +141,3 @@ function paintGraphLineUrlFaults(data) {
     
     });
 }
-

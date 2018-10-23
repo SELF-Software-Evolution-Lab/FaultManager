@@ -19,18 +19,7 @@
     <title>IotFaults App</title>
 </head>
 <body>
-    <div class="container">
-        <div class="row">
-            <h1 class="page-header">Iot Faults Dashboard</h1>
-        </div>
-        <div class="row">
-            <button type="button" class="btn btn-primary btn-lg" onclick="location.href='{%url 'iotfaults:real_time'%}'">Real Time</button>
-            <button type="button" class="btn btn-success btn-lg" onclick="location.href='{%url 'iotfaults:analytics'%}'">Analytics</button>
-        <div class="row">
-        {% block content %}
-        {% endblock %}
-
-        <a style="display:block" class="center-align" href="/admin">Admin Login</a>
-    </div>
+    {% block content %}
+    {% endblock %}
 </body>
 </html>

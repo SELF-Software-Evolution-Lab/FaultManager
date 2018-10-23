@@ -1,6 +1,5 @@
-{% extends 'iotfaults/layout.html' %}
+{% extends 'iotfaults/dashboardlayout.html' %}
 {% load staticfiles %}
-
 
 {% block header_content %}
     <script src="https://code.highcharts.com/highcharts.js"></script>
@@ -9,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
     <script>
         function refreshGraphPieFaultTypes() {
-            url = "{%url 'iotfaults:datafaulttypes' 'start_date_placeholder' 'end_date_placeholder' %}"
+            url = "{%url 'iotfaults:json_fault_types_count_between' 'start_date_placeholder' 'end_date_placeholder' %}"
             startdate = moment($('#dtpPieStartDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
             enddate = moment($('#dtpPieEndDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
             url = url.replace('start_date_placeholder', startdate).replace('end_date_placeholder', enddate)
@@ -17,7 +16,7 @@
         };
         
         function refreshGraphLineUrlFaults() {
-            url = "{%url 'iotfaults:component_faults_start_end' 'start_date_placeholder' 'end_date_placeholder' %}"
+            url = "{%url 'iotfaults:json_components_count_between' 'start_date_placeholder' 'end_date_placeholder' %}"
             startdate = moment($('#dtpLineStartDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
             enddate = moment($('#dtpLineEndDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
             url = url.replace('start_date_placeholder', startdate).replace('end_date_placeholder', enddate)
@@ -29,7 +28,7 @@
 {% endblock %}
 
 
-{% block content %}
+{% block dashboard_content %}
     <br>
     <div class="row">
         <div class="row">

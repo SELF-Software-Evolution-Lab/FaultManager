@@ -1,8 +1,7 @@
-# chat/routing.py
 from django.conf.urls import url
 
-from . import consumers
+from .consumers import EventConsumer
 
 websocket_urlpatterns = [
-    url(r'^ws/iotfaults/(?P<room_name>[^/]+)/$', consumers.ChatConsumer),
+    url(r'^ws/iotfaults/event/$', EventConsumer),
 ]

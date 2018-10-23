@@ -1,0 +1,6 @@
+{
+  "env": {
+    "browser": 1,
+    "jquery": true
+  }
+}

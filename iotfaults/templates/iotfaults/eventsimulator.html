@@ -1,0 +1,333 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie-edge">
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}"/>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Bootstrap DateTime Picker -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
+    <script>
+        EVENT_TYPE_ID = parseInt('{{event_type_id}}');
+        MAX_EVENTS_IN_TABLE = parseInt('{{max_events_in_table}}');
+        DEFAULT_AUTOMATIC_SECONDS = parseInt('{{default_automatic_seconds}}');
+
+        API_BASE_URL = window.location.origin + '/iotfaults/api/';
+        
+        /** Var that holds Interval to process automatic event creation */
+        var intervalAutomaticEventCreation;
+        
+        /** 
+         * Acquire the token from csrftoken cookie, which will be set if 
+         * CSRF protection for views is enabled 
+         * From: https://docs.djangoproject.com/en/2.1/ref/csrf/
+         * @param {Object} event - Event to be created.
+         */
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        /** Var that holds Cross Site Request Forgery protection Token */
+        var csrftoken = getCookie('csrftoken');
+
+        /** Set the header on AJAX request, while protecting the CSRF token 
+         * from being sent to other domains using settings.crossDomain in 
+         * jQuery 1.5.1 and newer 
+         */
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        /** 
+         * Create an event in Database via REST Service.
+         * @param {Object} event - Event to be created.
+         */
+        function createEventOnDbViaRest(event) {
+            api_url = API_BASE_URL + 'events/';
+            var eventRest = new Object();
+            eventRest.component_id = event.component_id;
+            eventRest.type_id = event.type_id;
+            if (!(event.time === undefined)) {
+                eventRest.time = moment(event.time).format("YYYY-MM-DD[T]HH:mm:ss.SSS[Z]");
+            }
+            $.post(api_url, eventRest)
+                .done(function( data ) {
+                    addEventToTable(data);
+                })
+                .fail(function(xhr, status, error) {
+                    console.error('Trying' + api_url + ' it was get ' + error);
+                });
+        }
+
+        /** 
+         * Create an event object based on
+         * @param {integer} component_id - Event component identifier.
+         * @param {string} component_name - Event component name.
+         * @param {integer} type_id - Event type identifier.
+         * @param {moment} time - Event time.
+         */
+        //  
+        function createEvent(component_id, component_name, type_id, time) {
+            var event = new Object();
+            event.component_id = component_id;
+            event.component_name = component_name;
+            event.type_id = type_id;
+            if (time != null) {
+                event.time = time;
+            }
+            createEventOnDbViaRest(event);
+        }
+
+        /** 
+         * Create and event based on user interface data.
+         */
+        function createEventBasedUI() {
+            component_id = $("#sComponent").val();
+            component_name = $("#sComponent option:selected").text();
+            time = $('#dtpTime').data("DateTimePicker").date();
+            createEvent(component_id, component_name, EVENT_TYPE_ID, time);
+        }
+        
+        /** 
+         * Add an event to user interface table.
+         * @param {Object} event - Event to be created.
+         */
+        function addEventToTable(event) {
+            $('#tTable tr:first').after('<tr>' +
+                '<td>' + event.id + '</td>' +
+                '<td>' + event.component_name + '</td>' +
+                '<td>' + moment(event.time).format('DD-MM-YYYY hh:mm:ss.SSS A') + '</td>' +
+                '</tr>');
+            if ($('#tTable tr').length > (MAX_EVENTS_IN_TABLE + 1)) {
+                $('#tTable tr:last').remove();    
+            }    
+        }
+        
+        /** 
+         * Automatic creation of event. To use inside Interval.
+         */
+        function createEventAutomaticly() {
+            componentCount = $('#sComponent option').length;
+            componentIndex = Math.floor(Math.random() * componentCount);
+            component_id = $('#sComponent option')[componentIndex].value;
+            component_name = $('#sComponent option')[componentIndex].text;
+            type_id = EVENT_TYPE_ID;
+            createEvent(component_id, component_name, type_id, null);
+        }
+        
+        /** Start Interval to create automaticly events. */
+        function startAutomaticEventCreation() {
+            interval = $("#sQuantity").val() * 1000;
+            intervalAutomaticEventCreation = setInterval(createEventAutomaticly, interval);
+        }
+        
+        /** Stops Interval to create automaticly events. */
+        function endAutomaticEventCreation() {
+            clearInterval(intervalAutomaticEventCreation);
+        }
+        
+        function setPageTitle(data) {
+            title = data.name + ' Simulator';
+            $("#tTitle").text(title);
+            $("#pTitle").text(title);
+        };
+        
+        function initTitle() {
+            api_url = API_BASE_URL + 'types/' + EVENT_TYPE_ID + '/?format=json';
+            $.getJSON(api_url).done(setPageTitle);
+        }
+
+    </script>
+    <title id="tTitle" >Event Simulator</title>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <h1 id="pTitle" class="page-header">Event Simulator</h1>
+        </div>
+        
+        <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="fa fa-eye fa-fw"></i> Generator
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class='col-xs-4'>
+                            <select id="sComponent" class="form-control selcls"></select>
+                        </div>
+                        <div class='col-xs-4'>
+                            <div class="form-group">
+                                <div class='input-group date' id='dtpTime'>
+                                    <input type='text' class="form-control" />
+                                    <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='col-xs-1'>
+                            <button type="button" class="btn btn-dark btn-sm" onclick="setDtpTimeNow();">Now</button>
+                        </div>
+                        <div class='col-xs-1'>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="createEventBasedUI();">Create</button>
+                        </div>
+                        <script type="text/javascript">
+                        
+                            function setDtpTimeNow() {
+                                //$('#dtpTime').data("DateTimePicker").date(moment());
+                            };
+                            
+                            function initDtpTime() {
+                                $('#dtpTime').datetimepicker({
+                                    useCurrent: false, //Important! See issue #1075
+                                    format: 'DD-MM-YYYY hh:mm:ss.SSS A'
+                                });
+                                setDtpTimeNow();
+                            };
+                            
+                            function loadSComponentOptions(data) {
+                                var options = "";
+                                for(var i=0; i<data.count; i++) {
+                                  if (i == 0) { selected = "selected"} else {selected = ""};
+                                  options += "<option value=" + data.results[i].id + " " + selected + ">"+ data.results[i].name +"</option>";
+                                }
+                                $("#sComponent").append(options);
+                            };
+                            
+                            function initSComponent() {
+                                api_url = API_BASE_URL + 'components/?format=json';
+                                $.getJSON(api_url).done(loadSComponentOptions);
+                            }
+                            
+                            $(function () {
+                                initSComponent();
+                                initDtpTime();
+                            });
+                            
+                        </script>                    
+                    </div>
+                    
+                    <div class="row">
+                        <div class="checkbox col-xs-2">
+                            <label id="lAutomatic" class="text-primary blink"><input id="iAutomatic" type="checkbox" value="">Automatic</label>
+                        </div>
+                        <div id="dAutomatic" class="d-none">
+                            <div class='col-xs-1'>
+                                <h5> Last:</h5>
+                            </div>
+                            <div class='col-xs-1'>
+                                <select id="sQuantity" class="form-control selcls"></select>
+                            </div>
+                            <div class='col-xs-1'>
+                                <h5>Seconds</h5>
+                            </div>
+                        </div>
+                        <script type="text/javascript">
+                            function loadSQuantity() {
+                                var options = "";
+                                for(var i=1; i<=60; i++) {
+                                    if (i == DEFAULT_AUTOMATIC_SECONDS) { selected = "selected"} else {selected = ""};
+                                    options += "<option value=" + i + " " + selected + ">"+ i +"</option>";
+                                }
+                                $("#sQuantity").append(options);
+                            };
+                            
+                            function blinkLabelAutomatic() {
+                                $('#lAutomatic').fadeOut(500);
+                                $('#lAutomatic').fadeIn(500);
+                            }
+                            
+                            var intervalBlinkLabelAutomatic;
+                            function startBlinkLabelAutomatic() {
+                                intervalBlinkLabelAutomatic = setInterval(blinkLabelAutomatic, 2000);
+                            }
+                            
+                            /** Stops Interval to create automaticly events. */
+                            function endBlinkLabelAutomatic() {
+                                clearInterval(intervalBlinkLabelAutomatic);
+                            }
+
+                            function initIAutomatic() {
+                                $('#iAutomatic').click(function() {
+                                    if ($(this).is(':checked')) {
+                                        //$('#dAutomatic').show();
+                                        startAutomaticEventCreation();
+                                        startBlinkLabelAutomatic();
+                                    }
+                                    else {
+                                        //$('#dAutomatic').hide();
+                                        endAutomaticEventCreation();
+                                        endBlinkLabelAutomatic();
+                                    }
+                                });
+                            }
+                            function initDAutomatic() {
+                                //$('#dAutomatic').hide();
+                            }
+                            $(function () {
+                                loadSQuantity();
+                                initIAutomatic();
+                                initDAutomatic();
+                            });
+                        </script>                    
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="table-responsive">
+                <table id="tTable" class="table">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Component</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div> 
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            initTitle();
+        });
+    </script>
+</body>
+</html>

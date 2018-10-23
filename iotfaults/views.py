@@ -1,18 +1,21 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Event
+from .models import Type, Component, Event
 import json
 from django.db import connection
 from .utils.graphdata import Graphdata
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
-import channels.layers
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import iotfaults.keys
+from rest_framework import viewsets, mixins
+from .serializers import TypeSerializer, ComponentSerializer, EventSerializer
+
+# PRIVATE
 
 # Get data structure with information to build Fault Types Graph
-def get_data_fault_types(start_date, end_date):
+def get_db_data_struc_fault_types_count_between(start_date, end_date):
     with connection.cursor() as cursor:
         cursor.execute("SELECT iotfaults_type.name, count(0)"
             + " FROM iotfaults_event"
@@ -20,10 +23,11 @@ def get_data_fault_types(start_date, end_date):
             + " ON iotfaults_type.id = iotfaults_event.type_id"
             + " WHERE iotfaults_event.time >= %s"
             + " AND iotfaults_event.time <= %s"
-            + " GROUP BY type_id;", 
+            + " GROUP BY type_id" 
+            + " LIMIT 100;", 
             [
-                start_date.strftime('%Y-%m-%d %H:%M'),
-                end_date.strftime('%Y-%m-%d %H:%M')
+                start_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                end_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
             ])
         rows = cursor.fetchall()
         data = []
@@ -33,7 +37,7 @@ def get_data_fault_types(start_date, end_date):
     return data   
     
 # Get data structure with information to build Component per Fault Types Graph
-def get_data_struc_url_faults(start_date, end_date, str_date_group):
+def get_db_data_struc_components_date_group_count_between(start_date, end_date, str_date_group):
     with connection.cursor() as cursor:
         cursor.execute("SELECT iotfaults_component.name, DATE_FORMAT(time, %s), count(0)"
             + " FROM iotfaults_event"
@@ -41,15 +45,17 @@ def get_data_struc_url_faults(start_date, end_date, str_date_group):
             + " ON iotfaults_component.id = iotfaults_event.component_id"
             + " WHERE iotfaults_event.time >= %s"
             + " AND iotfaults_event.time <= %s"
-            + " GROUP BY iotfaults_component.name, DATE_FORMAT(time, %s);", 
+            + " GROUP BY iotfaults_component.name, DATE_FORMAT(time, %s)" 
+            + " ORDER BY iotfaults_event.time" 
+            + " LIMIT 100;", 
             [
                 str_date_group,
-                start_date.strftime('%Y-%m-%d %H:%M'),
-                end_date.strftime('%Y-%m-%d %H:%M'),
+                start_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                end_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
                 str_date_group
             ])
         rows = cursor.fetchall()
-        
+
         graphData = Graphdata(0)
         graphData.load(rows)
         
@@ -61,7 +67,7 @@ def get_data_struc_url_faults(start_date, end_date, str_date_group):
 
 # Get data structure with information to build Component per Fault Types Graph 
 # between start date and end date
-def get_data_component_faults_start_end(start_date, end_date):
+def get_data_components_count_between(start_date, end_date):
     diff = end_date - start_date
     str_date_group = '%Y'
     if diff.days <= 365:
@@ -74,11 +80,11 @@ def get_data_component_faults_start_end(start_date, end_date):
             str_date_group += '%im'
         if diff.seconds <= 60:
             str_date_group += ':%ss'
-    return get_data_struc_url_faults(start_date, end_date, str_date_group)   
+    return get_db_data_struc_components_date_group_count_between(start_date, end_date, str_date_group)   
 
 # Get data structure with information to build Component per Fault Types Graph 
 # between start date and end date
-def get_data_component_faults_quantity_interval(quantity, date_type):
+def get_data_components_count_last(quantity, date_type):
     end_date = datetime.now()
     
     # Default to Years
@@ -102,11 +108,11 @@ def get_data_component_faults_quantity_interval(quantity, date_type):
     elif date_type == "Seconds":
         str_date_group = '%Y-%m-%d %Hh%im:%ss'
         start_date = end_date + relativedelta(seconds=-quantity)
-    return get_data_struc_url_faults(start_date, end_date, str_date_group)   
+    return get_db_data_struc_components_date_group_count_between(start_date, end_date, str_date_group)   
 
 # Get data structure with information to build Component per Fault Types Graph 
 # between start date and end date
-def get_data_component_location_quantity_interval(quantity, date_type):
+def get_db_data_struc_components_detail_count_last(quantity, date_type):
     end_date = datetime.now()
     
     # Default to Years
@@ -139,13 +145,14 @@ def get_data_component_location_quantity_interval(quantity, date_type):
             + " iotfaults_component.name,"
             + " iotfaults_component.url,"
             + " iotfaults_component.latitude,"
-            + " iotfaults_component.longitude;", 
+            + " iotfaults_component.longitude" 
+            + " LIMIT 100;", 
             [
-                start_date.strftime('%Y-%m-%d %H:%M'),
-                end_date.strftime('%Y-%m-%d %H:%M'),
+                start_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                end_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
             ])
         rows = cursor.fetchall()
-        
+
         data = []
         for tuple in rows:
             obj = {}
@@ -158,11 +165,20 @@ def get_data_component_location_quantity_interval(quantity, date_type):
             data.append(obj)
     return data    
 
+# RENDERS
+
+# Index view
+def index(request):
+    context = {
+        'title': 'Index',
+    }
+    return render(request, 'iotfaults/index.html', context)
+
 # View for dinamic graphics
 def real_time(request):
     #events = Event.objects.all()[:10]
     context = {
-        'title': 'Dashboard - Dynamic',
+        'title': 'Dashboard - Real Time',
         'google_maps_key': iotfaults.keys.GOOGLE_MAPS_PRIVATE_KEY,
     }
     return render(request, 'iotfaults/realtime.html', context)
@@ -171,53 +187,97 @@ def real_time(request):
 def analytics(request):
     #events = Event.objects.all()[:10]
     context = {
-        'title': 'Dashboard - Static',
+        'title': 'Dashboard - Analytics',
     }
-    
-    #print('Enviando al chat')
-    #channel_layer = channels.layers.get_channel_layer()
-    #from asgiref.sync import async_to_sync
-    #async_to_sync(channel_layer.group_send)('chat_lobby', {
-    #            'type': 'chat_message',
-    #            'message': 'Prueba desde static'
-    #        })
 
     return render(request, 'iotfaults/analytics.html', context)
 
-def details(request, id):
+# Fault Detail View
+def event_detail(request, id):
     event = Event.objects.get(id=id) 
     context = {
         'event': event,
     }
-    return render(request, 'iotfaults/details.html', context)
+    return render(request, 'iotfaults/eventdetail.html', context)
     
-def jsonDataFaultTypes(request, str_start_date, str_end_date):
+# Node Failure Event Simulator View
+def node_failure_simulator(request):
+    context = {
+        'title': 'Node Failure Simulator',
+        'event_type_id': 1,
+        'max_events_in_table': 50,
+        'default_automatic_seconds': 10,
+    }
+    return render(request, 'iotfaults/eventsimulator.html', context)
+
+# Node Failure Event Simulator View
+def out_of_range_simulator(request):
+    context = {
+        'title': 'Out of Range Simulator',
+        'event_type_id': 2,
+        'max_events_in_table': 50,
+        'default_automatic_seconds': 10,
+    }
+    return render(request, 'iotfaults/eventsimulator.html', context)
+
+# JSON GRAPH DATA  
+
+# Return Json data about Fault Types
+def json_fault_types_count_between(request, str_start_date, str_end_date):
     start_date = datetime.strptime(str_start_date, '%Y%m%d%H%M')
     end_date = datetime.strptime(str_end_date, '%Y%m%d%H%M')
-    data = get_data_fault_types(start_date, end_date)
+    data = get_db_data_struc_fault_types_count_between(start_date, end_date)
     return JsonResponse(data, safe=False)
     
-def component_faults_start_end(request, str_start_date, str_end_date):
+# Return Json data about Component faults between start date and end date
+def json_components_count_between(request, str_start_date, str_end_date):
     start_date = datetime.strptime(str_start_date, '%Y%m%d%H%M')
     end_date = datetime.strptime(str_end_date, '%Y%m%d%H%M')
-    data = get_data_component_faults_start_end(start_date, end_date)
+    data = get_data_components_count_between(start_date, end_date)
     return JsonResponse(data, safe=False)    
     
-def component_faults_last_interval(request, str_quantity, str_date_type):
-    data = get_data_component_faults_quantity_interval(int(str_quantity), str_date_type)
+# Return Json data about Component faults between last interval 
+# determined by quantity and date type 
+# e.g. Quantity: 24 Date Type: Days is last 24 days
+def json_components_count_last(request, str_quantity, str_date_type):
+    data = get_data_components_count_last(int(str_quantity), str_date_type)
     return JsonResponse(data, safe=False)    
     
-def component_location_last_interval(request, str_quantity, str_date_type):
-    data = get_data_component_location_quantity_interval(int(str_quantity), str_date_type)
-    return JsonResponse(data, safe=False)    
+# Return Json data about Component faults for Map between last interval 
+# determined by quantity and date type 
+# e.g. Quantity: 24 Date Type: Days is last 24 days
+def json_components_detail_count_last(request, str_quantity, str_date_type):
+    data = get_db_data_struc_components_detail_count_last(int(str_quantity), str_date_type)
+    return JsonResponse(data, safe=False)   
     
-    
-####### EXAMPLE WebSokects with Channels    
+# REST
 
-def index_chat(request):
-    return render(request, 'iotfaults/index_chat.html', {})
+class TypeViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+    queryset = Type.objects.all()
+    serializer_class = TypeSerializer
+
+
+class ComponentViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+    queryset = Component.objects.all()
+    serializer_class = ComponentSerializer
     
-def room(request, room_name):
-    return render(request, 'iotfaults/room.html', {
-        'room_name_json': mark_safe(json.dumps(room_name))
-    })    
+class CreateRetrieveViewSet(mixins.CreateModelMixin,
+                            mixins.RetrieveModelMixin,
+                            viewsets.GenericViewSet):
+    """
+    A viewset that provides `retrieve` and `create` actions.
+
+    To use it, override the class and set the `.queryset` and
+    `.serializer_class` attributes.
+    """
+    pass
+
+class EventViewSet(CreateRetrieveViewSet):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer

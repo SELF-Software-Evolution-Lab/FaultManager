@@ -41,6 +41,18 @@ https://docs.djangoproject.com/en/1.9/intro/tutorial01/
 Visit http://docs.c9.io for support, or to learn more about using Cloud9 IDE.
 To watch some training videos, visit http://www.youtube.com/user/c9ide
 
+## Installed
+Python 3.6.3: https://gist.github.com/espozbob/b86bbfbbdc78a47461037036d365ebfb
+DJango 2.1.2: pip install Django
+MySQL 5.7.23: https://wpkb.org/install-mysql-5-7-at-cloud9-workspace/
+# For Django REST Documentation
+sudo pip install coreapi
+pip install -U drf-yasg
+
+# Requirements
+pip install pipreqs
+~/workspace (master) $ pipreqs . --force
+    
 # Virtual Environment
 source ~/.virtualenvs/test/bin/activate
 

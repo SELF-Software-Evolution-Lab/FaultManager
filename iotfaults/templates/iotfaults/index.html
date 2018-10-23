@@ -1,0 +1,9 @@
+{% extends 'iotfaults/dashboardlayout.html' %}
+
+{% block dashboard_content %}
+    <br>
+    <div class="row">
+        <button type="button" class="btn btn-info btn-xs" onclick="location.href='{% url 'iotfaults:node_failure_simulator' %}'">Node Failure Event Simulator</button>
+        <button type="button" class="btn btn-warning btn-xs" onclick="location.href='{% url 'iotfaults:out_of_range_simulator' %}'">Out of Range Event Simulator</button>
+    </div>
+{% endblock %}
