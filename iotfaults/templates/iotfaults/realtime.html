@@ -2,17 +2,51 @@
 {% load staticfiles %}
 
 {% block header_content %}
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+
+    <!--HighCharts Stock Graphics-->
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <!--HighCharts Stock Graphics File Exporting-->
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <!--HighCharts Stock Graphics Data Exporting-->
+    <script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
+    
+    <!--Graphics Controller hols graphics rendering-->
     <script src="{% static 'js/iotfaults/graphicsController.js' %}"></script>
+
+
+    <!-- joewalnes/reconnecting-websocket: A small decorator for -->
+    <!-- the JavaScript WebSocket API that automatically reconnects-->
     <script src="{% static 'js/iotfaults/reconnecting-websocket.js' %}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
     <script>
-        /* global google, paintGraphLineUrlFaults */
+        /***** UTILITIES *****/
         
-        /** Var that holds Google map */
+        /** 
+         * Open Url on new window.
+         * @param {url} urlToOpen - Url to open
+         */
+        function openOnNewWindow(urlToOpen) {
+            window.open(window.location.origin + urlToOpen, '_blank');
+        }
+    
+        /** 
+         * Mark and option as selected.
+         * @params {element} selectComponent
+         * @params {string} optionValue
+         */
+        function markOptionAsSelected(selectComponent, optionValue) {
+            var opt = $("select#" + selectComponent[0].id + " option[value=" + optionValue + "]"),
+            html = $("<div>").append(opt.clone()).html();
+            html = html.replace(/\>/, ' selected="selected">');
+            opt.replaceWith(html);
+        }
+        
+        /***** MAP *****/
+        
+        /* global google */
+        
+        /** Var map holds Google map */
         var map;
-        /** Var that holds all Google markers to show */
+        /** Var markers holds all Google Map markers to show */
         var markers = [];
         
         /** 
@@ -20,7 +54,7 @@
          */
         function initMap() {
             map = new google.maps.Map(
-                document.getElementById('map-container'), {zoom: 17});
+                document.getElementById('divComponentMap'), {zoom: 17});
         }
 
         /** 
@@ -79,7 +113,7 @@
                 var title = 'Id: ' + obj["id"] +
                     '\nName: ' + obj["name"] +
                     '\nUrl: ' + obj["url"] +
-                    '\nFaults: ' + obj["faults"];
+                    '\nEvents: ' + obj["event_count"];
                 var position = new google.maps.LatLng(
                     parseFloat(obj["latitude"]), parseFloat(obj["longitude"]));
                 addMarker(position, title);
@@ -89,42 +123,18 @@
         }
         
         /** 
-         * Open Url on new window.
-         * @param {url} urlToOpen - Url to open
-         */
-        function openOnNewWindow(urlToOpen) {
-            window.open(window.location.origin + urlToOpen, '_blank');
-        }
-    
-        /** 
          * Refresh map component location.
          */
         function refreshMapComponentLocation() {
-            var url = "{% url 'iotfaults:json_components_detail_count_last' 'quantity_placeholder' 'date_type_placeholder' %}";
+            var url = "{% url 'iotfaults:component-event-count-for-map' 'quantity_placeholder' 'date_type_placeholder' %}";
             var quantity = $( "#sQuantityComponentLocation" ).val(); 
             var datetype = $( "#sDateTypeComponentLocation" ).val(); 
             url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype);
             $.getJSON(url).done(paintMapComponentLocation);
         }
         
-        /** 
-         * Refresh graph line Url Faults.
-         */
-        function refreshGraphLineUrlFaults() {
-            var url = "{% url 'iotfaults:json_components_count_last' 'quantity_placeholder' 'date_type_placeholder' %}";
-            var quantity = $( "#sQuantityComponentFaults" ).val(); 
-            var datetype = $( "#sDateTypeComponentFaults" ).val(); 
-            url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype);
-            $.getJSON(url).done(paintGraphLineUrlFaults);
-        }
-        
-        /** 
-         * Refresh all graps.
-         */
-        function refreshAllGraps() {
-            refreshMapComponentLocation();
-            refreshGraphLineUrlFaults();
-        }
+
+        /***** WEBSOCKET *****/
         
         /** 
          * Get Event WebSocket path.
@@ -153,9 +163,11 @@
         
             webSocket.onmessage = function(e) {
                 var data = JSON.parse(e.data);
-                var message = data['message'];
-                if (message == 'savedEvent') {
-                    setTimeout(refreshAllGraps, 0);
+                var event_created = data['message'];
+                if (event_created != null) {
+                    loadArrayDataEventsGraph([event_created]);
+                    loadInitDataComponentEventCountGraph();
+                    refreshMapComponentLocation();
                 }
             };
         
@@ -174,16 +186,218 @@
             eventWebSocket = getEventWebSocket();
         }
         
+        /***** EVENTS GRAPH *****/
+        
+        /** Var eventsGraph holds Events Graph. */
+        var eventsGraph;
+        /** Var faultShapes holds all posible Fault Marker Shapes. */
+        var faultShapes = ["triangle", "square", "circle", "diamond", 
+            "triangle-down"];
+        /** Var componentColors holds all posible Component Marker Colors. */
+        var componentColors = ["#7cb5ec", "#434348", "#90ed7d", "#f7a35c", 
+            "#8085e9", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"];
+
+        /* global moment*/
         /** 
-         * Mark and option as selected.
-         * @params {element} selectComponent
-         * @params {string} optionValue
+         * Load data in an array into Events Graph.
          */
-        function markOptionAsSelected(selectComponent, optionValue) {
-            var opt = $("select#" + selectComponent[0].id + " option[value=" + optionValue + "]"),
-            html = $("<div>").append(opt.clone()).html();
-            html = html.replace(/\>/, ' selected="selected">');
-            opt.replaceWith(html);
+        function loadArrayDataEventsGraph(data) {
+            const len = data.length,
+                serie = eventsGraph.series[0];
+            for (var i=0; i < len; i++) {
+                const event = data[i],
+                    x = moment(event.time).toDate().getTime(), 
+                    y = 0,
+                    indexFaultShape = (event.type_id % 5) - 1,
+                    indexComponentColor = (event.component_id % 10) - 1;
+                serie.addPoint(
+                {
+                    x: x,
+                    y: y,
+                    marker: {
+                        radius: 4,
+                        symbol: faultShapes[indexFaultShape],
+                        fillColor: componentColors[indexComponentColor],
+                    },
+                    faultName: event.type_name,
+                    componentName: event.component_name,
+                }, false);                
+            }
+            if ((serie != null) && (serie.data.length > 1000)) {
+                serie.data.shift();
+            }
+            eventsGraph.redraw();
+        }        
+
+        /** 
+         * Load initial data from server into Events graph.
+         */
+        function loadInitDataEventsGraph() {
+            var url = "{% url 'iotfaults:event-last' %}";
+            $.getJSON(url).done(loadArrayDataEventsGraph);
+        }
+
+        /* global Highcharts */
+        /** 
+         * Initialize Events Graph. 
+         */
+        function initEventsGraph() {
+            // Create the chart
+            eventsGraph = Highcharts.stockChart('divEventsGraph', {
+                title: {
+                    text: ''
+                },
+
+                tooltip: {
+                    formatter: function() {
+                    	var txt = '<b>Component:</b> ' + this.points[0].point.componentName + '<br>' +
+                      	'<b>Fault: </b> ' + this.points[0].point.faultName + '<br>' +
+                        '<b>Time: </b> ' + 
+                      	Highcharts.dateFormat('%I:%M:%S %P - %a, %e %b, %y', new Date(this.x)); 
+                        return txt;
+                    }
+                },
+
+                yAxis: {
+                    labels: {
+                    	enabled: false
+                    }
+                },
+                
+                xAxis: {
+                    ordinal: false
+                },
+            
+        		time: {
+                    useUTC: false
+                },
+            
+                rangeSelector: {
+                    buttons: [{
+                        count: 10,
+                        type: 'second',
+                        text: '10S'
+                    }, {
+                        count: 1,
+                        type: 'minute',
+                        text: '1M'
+                    }, {
+                        count: 5,
+                        type: 'minute',
+                        text: '5M'
+                    }, {
+                        type: 'all',
+                        text: 'All'
+                    }],
+                    inputEnabled: false,
+                    selected: 1
+                },
+            
+                series: [{
+                    name: 'Random data',
+                    lineWidth: 0,
+                    marker: {
+                      enabled: true,
+                      radius: 2
+                    },
+                    tooltip: {
+                      valueDecimals: 2
+                    },
+                    states: {
+                      hover: {
+                        lineWidthPlus: 0
+                      }
+                    }
+                }]
+            });
+            loadInitDataEventsGraph();
+        }
+
+        /***** ACCUMULATED EVENT GRAPH *****/
+        
+        /** Var eventsGraph holds Accumulated Events Graph. */
+        var componentEventCountGraph;
+
+        /** 
+         * Load initial data from server into Accumulated Events graph.
+         */
+        function setDataComponentEventCountGraph(data) {
+            componentEventCountGraph.xAxis[0].setCategories(data.categories, false);
+            // Remove all series
+            var len = componentEventCountGraph.series.length, i;
+            for (i=len-1;i>=0;i--) {
+                componentEventCountGraph.series[i].remove(false, false);
+            }
+            len = data.series.length;
+            for (i=0;i<len;i++) {
+                componentEventCountGraph.addSeries(data.series[i], false, false);
+            }
+            componentEventCountGraph.redraw();
+        }
+
+        /** 
+         * Load initial data from server into Accumulated Events graph.
+         */
+        function loadInitDataComponentEventCountGraph() {
+            var url = "{% url 'iotfaults:component-event-count-last' 'quantity_placeholder' 'date_type_placeholder' %}";
+            var quantity = $( "#sQuantityComponentFaults" ).val(); 
+            var datetype = $( "#sDateTypeComponentFaults" ).val(); 
+            url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype);
+            $.getJSON(url).done(setDataComponentEventCountGraph);
+        }
+
+        /** 
+         * Initialize Events Graph. 
+         */
+        function initComponentEventCountGraph() {
+            componentEventCountGraph = Highcharts.chart('divComponentEventCountGraph', {
+                
+                chart: {
+                    type: 'line',
+                    animation: false
+                },
+        		title: {
+        			text: ''
+        		},
+                yAxis: {
+                    title: {
+                        text: 'Number of Faults'
+                    }
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'right',
+                    verticalAlign: 'middle'
+                },
+            
+                plotOptions: {
+                    series: {
+                        animation: false
+                    },
+                    line: {
+                        dataLabels: {
+                            enabled: true
+                        }
+                    }
+                },
+            
+                responsive: {
+                    rules: [{
+                        condition: {
+                            maxWidth: 500
+                        },
+                        chartOptions: {
+                            legend: {
+                                layout: 'horizontal',
+                                align: 'center',
+                                verticalAlign: 'bottom'
+                            }
+                        }
+                    }]
+                }
+            
+            });
+            loadInitDataComponentEventCountGraph();
         }
         
     </script>
@@ -197,7 +411,7 @@
         <div class="row">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <i class="fa fa-pie-chart fa-fw"></i> Fault Types
+                    <i class="fa fa-map-marker fa-fw"></i> Component with Events
                 </div>
                 <div class="panel-body">
                     <div class="row">
@@ -240,9 +454,21 @@
                         </script>                    
                     </div>
                     <div class="row">
-                        <div id="map-container" class="z-depth-1" style="height: 500px"></div>
+                        <div id="divComponentMap" class="z-depth-1" style="height: 500px"></div>
                         <script src="https://maps.googleapis.com/maps/api/js?key={{google_maps_key}}&callback=initMap" async defer></script>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-line-chart fa-fw"></i> Last Events
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div id="divEventsGraph" style="width:100%; height:400px;"></div>
                 </div>
             </div>
         </div>
@@ -253,57 +479,58 @@
                 <i class="fa fa-line-chart fa-fw"></i> Components Faults
             </div>
             <div class="panel-body">
-                    <div class="row">
-                        <div class='col-xs-1'>
-                            <label for="sQuantityComponentFaults">Last:</label>
-                        </div>
-                        <div class='col-xs-2'>
-                            <select id="sQuantityComponentFaults" class="form-control selcls"></select>
-                        </div>
-                        <div class='col-xs-2'>
-                            <select id="sDateTypeComponentFaults" class="form-control selcls">
-                                <option value="Years">Years</option>
-                                <option value="Months">Months</option>
-                                <option value="Weeks">Weeks</option>
-                                <option value="Days">Days</option>
-                                <option value="Hours">Hours</option>
-                                <option value="Minutes">Minutes</option>
-                                <option value="Seconds">Seconds</option>
-                            </select>
-                        </div>
-                        <script type="text/javascript">
-                            $(function () {
-                                /* global refreshGraphLineUrlFaults, markOptionAsSelected */
-                                var options = "";
-                                for(var i=1; i <=60; i++) {
-                                    options += "<option value=" + i + ">"+ i +"</option>";
-                                }
-
-                                const sQuantityComponentFaults = $("#sQuantityComponentFaults");
-                                const sDateTypeComponentFaults = $("#sDateTypeComponentFaults");
-                                sQuantityComponentFaults.append( options );
-                                sQuantityComponentFaults.on('change', function() {
-                                    refreshGraphLineUrlFaults();
-                                });
-                                sDateTypeComponentFaults.on('change', function() {
-                                    refreshGraphLineUrlFaults();
-                                });
-                                markOptionAsSelected(sQuantityComponentFaults, "5");
-                                markOptionAsSelected(sDateTypeComponentFaults, "Minutes") 
+                <div class="row">
+                    <div class='col-xs-1'>
+                        <label for="sQuantityComponentFaults">Last:</label>
+                    </div>
+                    <div class='col-xs-2'>
+                        <select id="sQuantityComponentFaults" class="form-control selcls"></select>
+                    </div>
+                    <div class='col-xs-2'>
+                        <select id="sDateTypeComponentFaults" class="form-control selcls">
+                            <option value="Years">Years</option>
+                            <option value="Months">Months</option>
+                            <option value="Weeks">Weeks</option>
+                            <option value="Days">Days</option>
+                            <option value="Hours">Hours</option>
+                            <option value="Minutes">Minutes</option>
+                            <option value="Seconds">Seconds</option>
+                        </select>
+                    </div>
+                    <script type="text/javascript">
+                        $(function () {
+                            /* global loadInitDataComponentEventCountGraph, markOptionAsSelected */
+                            var options = "";
+                            for(var i=1; i <=60; i++) {
+                                options += "<option value=" + i + ">"+ i +"</option>";
+                            }
+                            const sQuantityComponentFaults = $("#sQuantityComponentFaults");
+                            const sDateTypeComponentFaults = $("#sDateTypeComponentFaults");
+                            sQuantityComponentFaults.append( options );
+                            sQuantityComponentFaults.on('change', function() {
+                                loadInitDataComponentEventCountGraph();
                             });
-                        </script>                    
-                    </div>
-                    <div class="row">
-                        <div id="graphLineUrlFaults" style="width:100%; height:400px;"></div>
-                    </div>
+                            sDateTypeComponentFaults.on('change', function() {
+                                loadInitDataComponentEventCountGraph();
+                            });
+                            markOptionAsSelected(sQuantityComponentFaults, "5");
+                            markOptionAsSelected(sDateTypeComponentFaults, "Minutes") 
+                        });
+                    </script>                    
+                </div>
+                <div class="row">
+                    <div id="divComponentEventCountGraph" style="width:100%; height:400px;"></div>
+                </div>
             </div>
         </div>
     </div>
     <script>
-        /* global connectToEventWebSocket, refreshAllGraps */
+        /* global connectToEventWebSocket, initEventsGraph, refreshMapComponentLocation, initComponentEventCountGraph */
         $(document).ready(function() {
+            refreshMapComponentLocation();
+            initEventsGraph();
+            initComponentEventCountGraph();
             connectToEventWebSocket();
-            refreshAllGraps();
         });
     </script>
 

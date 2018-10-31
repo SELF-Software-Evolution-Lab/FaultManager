@@ -2,27 +2,101 @@
 {% load staticfiles %}
 
 {% block header_content %}
+    <!--HighCharts Graphics-->
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!--Graphics Controller hols graphics rendering-->
     <script src="{% static 'js/iotfaults/graphicsController.js' %}"></script>
+    <!--Eonasdan/bootstrap-datetimepicker: Date/time picker widget based on bootstrap-->
+    <!--Requires JQuery and Moment and Bootstrap-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
+    <!-- Datatables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
     <script>
+    
+        /* global paintGraphPieFaultTypes, paintGraphLineUrlFaults, moment */
         function refreshGraphPieFaultTypes() {
-            url = "{%url 'iotfaults:json_fault_types_count_between' 'start_date_placeholder' 'end_date_placeholder' %}"
-            startdate = moment($('#dtpPieStartDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
-            enddate = moment($('#dtpPieEndDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
-            url = url.replace('start_date_placeholder', startdate).replace('end_date_placeholder', enddate)
+            const startDate = $('#dtpPieStartDate').data("DateTimePicker").date().toISOString(); 
+            const endDate = $('#dtpPieEndDate').data("DateTimePicker").date().toISOString();
+            var url = "{%url 'iotfaults:type-event-count-between' 'start_date_placeholder' 'end_date_placeholder' %}";
+            url = url.replace('start_date_placeholder', startDate).replace('end_date_placeholder', endDate);
             $.getJSON(url).done(paintGraphPieFaultTypes);
-        };
+        }
         
         function refreshGraphLineUrlFaults() {
-            url = "{%url 'iotfaults:json_components_count_between' 'start_date_placeholder' 'end_date_placeholder' %}"
-            startdate = moment($('#dtpLineStartDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
-            enddate = moment($('#dtpLineEndDate').data("DateTimePicker").date()).format('YYYYMMDDHHmm'); 
-            url = url.replace('start_date_placeholder', startdate).replace('end_date_placeholder', enddate)
+            const startDate = $('#dtpLineStartDate').data("DateTimePicker").date().toISOString();
+            const endDate = $('#dtpLineEndDate').data("DateTimePicker").date().toISOString(); 
+            var url = "{%url 'iotfaults:component-event-count-between' 'start_date_placeholder' 'end_date_placeholder' %}";
+            url = url.replace('start_date_placeholder', startDate).replace('end_date_placeholder', endDate);
             $.getJSON(url).done(paintGraphLineUrlFaults);
-        };
+        }
+        
+        function setDataReport(data) {
+            var datatable = $('#tReport').DataTable();
+            datatable.clear();
+            datatable.rows.add(data);
+            datatable.draw();
+        }
+        
+        function loadDataReport() {
+            const startDate = $('#dtpReportStartDate').data("DateTimePicker").date().toISOString();
+            const endDate = $('#dtpReportEndDate').data("DateTimePicker").date().toISOString(); 
+            var url = "{%url 'iotfaults:event-between' 'start_date_placeholder' 'end_date_placeholder' %}";
+            var filter = "";
+            var sep = "?";
+            var componentId = $( "#sComponent" ).val(); 
+            if (!(!componentId)) {
+                filter += sep + 'component=' + componentId;
+                sep = "&";
+            }
+            var typeId = $( "#sType" ).val(); 
+            if (!(!typeId)) {
+                filter += sep + 'type=' + typeId;
+                sep = "&";
+            }
+            url = url.replace('start_date_placeholder', startDate).replace('end_date_placeholder', endDate);
+            url += filter;
+            $.getJSON(url).done(setDataReport);
+        }
 
+        function initTReport() {
+            $('#tReport').DataTable( {
+                columns: [
+                    { 
+                        data: 'id' 
+                        
+                    },
+                    { 
+                        data: 'component_id' 
+                        
+                    },
+                    { 
+                        data: 'component_name' 
+                        
+                    },
+                    { 
+                        data: 'type_id' 
+                        
+                    },
+                    { 
+                        data: 'type_name' 
+                        
+                    },
+                    { 
+                        data: 'time',
+                        render: function(data, type, row){
+                            if(type === "sort" || type === "type"){
+                                return data;
+                            }
+                            return moment(data).format("YYYY-MM-MM HH:mm");
+                        }
+                    }
+                ]
+            } );
+            loadDataReport();
+        }
+        
     </script>
     
 {% endblock %}
@@ -146,11 +220,148 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-calculator fa-fw"></i> Events Report
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class='col-xs-2'>
+                        <label for="iReportStartDate">Start:</label>
+                    </div>
+                    <div class='col-xs-4'>
+                        <div class="form-group">
+                            <div class='input-group date' id='dtpReportStartDate'>
+                                <input type='text' class="form-control" />
+                                <span class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class='col-xs-2'>
+                        <label for="iReportEndDate">End:</label>
+                    </div>
+                    <div class='col-xs-4'>
+                        <div class="form-group">
+                            <div class='input-group date' id='dtpReportEndDate'>
+                                <input id="iReportEndDate" type='text' class="form-control" />
+                                <span class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script type="text/javascript">
+                        /* global moment, refreshGraphLineUrlFaults, loadDataReport */
+                        $(function () {
+                            const t = moment();
+                            $('#dtpReportStartDate').datetimepicker({
+                                useCurrent: false, //Important! See issue #1075
+                                format: 'DD-MM-YYYY hh:mm A',
+                                defaultDate: t.clone().subtract(1, 'month')
+                            });
+                            $('#dtpReportEndDate').datetimepicker({
+                                useCurrent: false, //Important! See issue #1075
+                                format: 'DD-MM-YYYY hh:mm A',
+                                defaultDate: t
+                            });
+                            $("#dtpReportStartDate").on("dp.change", function (e) {
+                                $('#dtpReportEndDate').data("DateTimePicker").minDate(e.date);
+                                loadDataReport();
+                            });
+                            $("#dtpReportEndDate").on("dp.change", function (e) {
+                                $('#dtpReportStartDate').data("DateTimePicker").maxDate(e.date);
+                                loadDataReport();
+                            });
+                        });
+                    </script>                    
+                </div>
+                <div class="row">
+                    <div class='col-xs-2'>
+                        <label for="sComponent">Component:</label>
+                    </div>
+                    <div class='col-xs-4'>
+                        <select id="sComponent" class="form-control selcls"></select>
+                    </div>
+                    <div class='col-xs-2'>
+                        <label for="sType">Type:</label>
+                    </div>
+                    <div class='col-xs-4'>
+                        <select id="sType" class="form-control selcls"></select>
+                    </div>
+                    <script type="text/javascript">
+                        function loadSComponentOptions(data) {
+                            var options = "<option value='' selected ></option>";
+                            for(var i=0; i<data.count; i++) {
+                                options += 
+                                    "<option value=" + data.results[i].id + ">" +
+                                    data.results[i].name +"</option>";
+                            }
+                            $("#sComponent").append(options);
+                        }
+                        
+                        function initSComponent() {
+                            const url = "{%url 'iotfaults:component-list' %}";
+                            $.getJSON(url).done(loadSComponentOptions);
+                        }
+                        
+                        function loadSTypeOptions(data) {
+                            var options = "<option value='' selected ></option>";
+                            for(var i=0; i<data.count; i++) {
+                                options += 
+                                    "<option value=" + data.results[i].id + ">" +
+                                    data.results[i].name +"</option>";
+                            }
+                            $("#sType").append(options);
+                        }
+                        
+                        function initSType() {
+                            const url = "{%url 'iotfaults:type-list' %}";
+                            $.getJSON(url).done(loadSTypeOptions);
+                        }
+                        
+                        /* global loadDataReport */
+                        $(function () {
+                            initSComponent();
+                            initSType();
+                            $("#sComponent").on('change', function() {
+                                loadDataReport();
+                            });
+                            $("#sType").on('change', function() {
+                                loadDataReport();
+                            });
+                        });
+                    </script>                    
+                </div>
+                <hr />
+                <div class="row ml-1">
+                    <table id="tReport" class="display">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Comp. Id</th>
+                                <th>Component</th>
+                                <th>Type Id</th>
+                                <th>Type Name</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>                
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script>
         $(document).ready(function() {
             refreshGraphPieFaultTypes();
             refreshGraphLineUrlFaults();
+            initTReport();
         });
     </script>
 

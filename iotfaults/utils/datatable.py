@@ -6,8 +6,8 @@ class Datatable:
     # Init internal data and assigns null Element that is used to 
     # fill new series
     def __init__(self, nullElem):
-        self.data = [['Titles']]    # creates a new empty list for each dog
-        self.nullElem = nullElem    # creates a new empty list for each dog
+        self.data = [['Titles']]   
+        self.nullElem = nullElem    
 
     
     # Add a new serie and returns that serie

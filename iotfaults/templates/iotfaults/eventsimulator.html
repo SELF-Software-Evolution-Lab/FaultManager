@@ -78,7 +78,7 @@
             eventRest.component_id = event.component_id;
             eventRest.type_id = event.type_id;
             if (!(event.time === undefined)) {
-                eventRest.time = moment(event.time).format("YYYY-MM-DD[T]HH:mm:ss.SSS[Z]");
+                eventRest.time = event.time.toISOString();
             }
             $.post(api_url, eventRest)
                 .done(function( data ) {

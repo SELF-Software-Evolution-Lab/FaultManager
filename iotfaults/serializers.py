@@ -16,7 +16,8 @@ class EventSerializer(serializers.HyperlinkedModelSerializer):
     component_id = serializers.IntegerField()
     component_name = serializers.CharField(source='component.name', read_only=True)
     type_id = serializers.IntegerField()
+    type_name = serializers.CharField(source='type.name', read_only=True)
     time = serializers.DateTimeField(required = False)
     class Meta:
         model = Event
-        fields = ('id', 'component_id', 'component_name', 'type_id', 'time')
+        fields = ('id', 'component_id', 'component_name', 'type_id', 'type_name', 'time')

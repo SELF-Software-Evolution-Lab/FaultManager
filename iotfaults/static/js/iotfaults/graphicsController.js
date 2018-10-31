@@ -100,7 +100,7 @@ function paintGraphLineUrlFaults(data) {
 			text: ''
 		},
         xAxis: {
-                categories: data.categories
+            categories: data.categories
         },
         yAxis: {
             title: {

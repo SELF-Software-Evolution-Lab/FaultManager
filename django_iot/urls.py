@@ -17,9 +17,11 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from django.http import HttpResponseRedirect
+from rest_framework.documentation import include_docs_urls
 
 urlpatterns = [
     url(r'^$', lambda r: HttpResponseRedirect('iotfaults/')),
     url(r'^admin/', admin.site.urls),
     url(r'^iotfaults/', include(('iotfaults.urls', 'iotfaults'), namespace='iotfaults')),
+    url(r'^api-docs/', include_docs_urls(title='IoT Faults API'))
 ]

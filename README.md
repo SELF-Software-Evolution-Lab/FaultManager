@@ -45,6 +45,7 @@ To watch some training videos, visit http://www.youtube.com/user/c9ide
 Python 3.6.3: https://gist.github.com/espozbob/b86bbfbbdc78a47461037036d365ebfb
 DJango 2.1.2: pip install Django
 MySQL 5.7.23: https://wpkb.org/install-mysql-5-7-at-cloud9-workspace/
+
 # For Django REST Documentation
 sudo pip install coreapi
 pip install -U drf-yasg

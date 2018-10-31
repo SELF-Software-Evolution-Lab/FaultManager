@@ -61,21 +61,6 @@ urlpatterns = [
     # Show Analytics Graphs
     url(r'^out-of-range-simulator$', views.out_of_range_simulator, name='out_of_range_simulator'),
     
-    ## DATA
-    
-    # Get data of Fault types since start date to end date
-    url(r'^data/fault-types/count/start/(?P<str_start_date>[^/]+)/end/(?P<str_end_date>[^/]+)$', views.json_fault_types_count_between, name='json_fault_types_count_between'),
-
-    # Get data of Components with Faults since start date to end date
-    url(r'^data/components/count/start/(?P<str_start_date>[^/]+)/end/(?P<str_end_date>[^/]+)$', views.json_components_count_between, name='json_components_count_between'),
-    
-    # Get data of Components with Faults last quantity of time
-    url(r'^data/components/count/quantity/(?P<str_quantity>[^/]+)/date-type/(?P<str_date_type>[^/]+)$', views.json_components_count_last, name='json_components_count_last'),
-    
-    # Get data of Components with Location with Faults last quantity of time
-    url(r'^data/components/detail/count/quantity/(?P<str_quantity>[^/]+)/date-type/(?P<str_date_type>[^/]+)$', views.json_components_detail_count_last, name='json_components_detail_count_last'),
-    
-    
     ## Django REST Frame work
     
     # Api Root
@@ -92,5 +77,6 @@ urlpatterns = [
 
     # A ReDoc view of your API specification at /redoc/
     url(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    
     
 ]
