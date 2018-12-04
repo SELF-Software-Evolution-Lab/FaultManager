@@ -46,6 +46,7 @@
         
         /** Var map holds Google map */
         var map;
+        var mapMetadata;
         /** Var markers holds all Google Map markers to show */
         var markers = [];
         
@@ -61,12 +62,20 @@
          * Adds a marker to the map and push to the array.
          */
         function addMarker(position, title) {
+            var infowindow = new google.maps.InfoWindow({
+    content: "<span>any html goes here</span>"
+});
             var marker = new google.maps.Marker({
                 position: position, 
                 title: title, 
-                map: map
+                map: map,
+                my_especial_data: 'Super secreto'
             });
             markers.push(marker);
+            
+            google.maps.event.addListener(marker, 'click', function(e) {
+  infowindow.open(map,marker);
+});
         }
         
         /** 
@@ -104,12 +113,13 @@
          * Paint map component with markers in data.
          * @param {list:obj} data
          */
-        function paintMapComponentLocation(data) {
+        function setDataComponentLocationMap(data) {
+            mapMetadata = data.metadata;
             deleteMarkers();
             var bounds = new google.maps.LatLngBounds();
-            var len = data.length;
+            var len = data.pointsData.length;
             for (var i = 0; i < len; i++) {
-                var obj = data[i];
+                var obj = data.pointsData[i];
                 var title = 'Id: ' + obj["id"] +
                     '\nName: ' + obj["name"] +
                     '\nUrl: ' + obj["url"] +
@@ -125,12 +135,12 @@
         /** 
          * Refresh map component location.
          */
-        function refreshMapComponentLocation() {
+        function loadInitDataComponentLocationMap() {
             var url = "{% url 'iotfaults:component-event-count-for-map' 'quantity_placeholder' 'date_type_placeholder' %}";
             var quantity = $( "#sQuantityComponentLocation" ).val(); 
             var datetype = $( "#sDateTypeComponentLocation" ).val(); 
             url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype);
-            $.getJSON(url).done(paintMapComponentLocation);
+            $.getJSON(url).done(setDataComponentLocationMap);
         }
         
 
@@ -165,9 +175,9 @@
                 var data = JSON.parse(e.data);
                 var event_created = data['message'];
                 if (event_created != null) {
-                    loadArrayDataEventsGraph([event_created]);
+                    setArrayDataEventsGraph([event_created]);
                     loadInitDataComponentEventCountGraph();
-                    refreshMapComponentLocation();
+                    loadInitDataComponentLocationMap();
                 }
             };
         
@@ -201,7 +211,7 @@
         /** 
          * Load data in an array into Events Graph.
          */
-        function loadArrayDataEventsGraph(data) {
+        function setArrayDataEventsGraph(data) {
             const len = data.length,
                 serie = eventsGraph.series[0];
             for (var i=0; i < len; i++) {
@@ -234,7 +244,7 @@
          */
         function loadInitDataEventsGraph() {
             var url = "{% url 'iotfaults:event-last' %}";
-            $.getJSON(url).done(loadArrayDataEventsGraph);
+            $.getJSON(url).done(setArrayDataEventsGraph);
         }
 
         /* global Highcharts */
@@ -257,7 +267,56 @@
                         return txt;
                     }
                 },
-
+                // //https://stackoverflow.com/questions/24627345/create-graph-in-tooltip-of-highchart
+                // tooltip: {
+                //     useHTML: true,
+                //     formatter: function() {
+                //         var i = this.key;
+                //         setTimeout( function() {
+                //             $("#hc-tooltip").highcharts({
+                //                 chart: {
+                //                     height: 100,
+                //                     type: 'column'
+                //                 },
+                //                 credits: {
+                //                     enabled: false
+                //                 },
+                //                 title: {
+                //                     text: null  
+                //                 },
+                //                 exporting: { 
+                //                     enabled: false
+                //                 },
+                //                  yAxis: {
+                //                     min: 0,
+                //                     title: {
+                //                         text: 'Rainfall (mm)'
+                //                     }
+                //                 },
+                //                 xAxis: {
+                //                     categories: [
+                //                         'Jan',
+                //                         'Feb',
+                //                         'Mar',
+                //                         'Abr'
+                //                     ],
+                //                     crosshair: true
+                //                 },
+                //                 series: [{
+                //                     showInLegend: false,  
+                //                     data: [49.9, 71.5, 32, 88]
+                //                 }]
+                //             });
+                //         }, 10)
+        
+                //     	var txt = '<b>Component:</b> ' + this.points[0].point.componentName + '<br>' +
+                //           	'<b>Fault: </b> ' + this.points[0].point.faultName + '<br>' +
+                //             '<b>Time: </b> ' + 
+                //           	Highcharts.dateFormat('%I:%M:%S %P - %a, %e %b, %y', new Date(this.x)) +
+                //           	'<div id="hc-tooltip"></div><br><br><br><br><br><br>'; 
+                //         return txt;
+                //     }
+                // },
                 yAxis: {
                     labels: {
                     	enabled: false
@@ -317,11 +376,13 @@
         
         /** Var eventsGraph holds Accumulated Events Graph. */
         var componentEventCountGraph;
+        var componentEventCountGraphMetadata;
 
         /** 
          * Load initial data from server into Accumulated Events graph.
          */
         function setDataComponentEventCountGraph(data) {
+            componentEventCountGraphMetadata = data.metadata;
             componentEventCountGraph.xAxis[0].setCategories(data.categories, false);
             // Remove all series
             var len = componentEventCountGraph.series.length, i;
@@ -339,7 +400,7 @@
          * Load initial data from server into Accumulated Events graph.
          */
         function loadInitDataComponentEventCountGraph() {
-            var url = "{% url 'iotfaults:component-event-count-last' 'quantity_placeholder' 'date_type_placeholder' %}";
+            var url = "{% url 'iotfaults:component-event-date-group-count-last' 'quantity_placeholder' 'date_type_placeholder' %}";
             var quantity = $( "#sQuantityComponentFaults" ).val(); 
             var datetype = $( "#sDateTypeComponentFaults" ).val(); 
             url = url.replace('quantity_placeholder', quantity).replace('date_type_placeholder', datetype);
@@ -433,7 +494,7 @@
                             </select>
                         </div>
                         <script type="text/javascript">
-                            /* global refreshMapComponentLocation, markOptionAsSelected */
+                            /* global loadInitDataComponentLocationMap, markOptionAsSelected */
                             $(function () {
                                 var options = "";
                                 for(var i=1; i <=60; i++) {
@@ -443,10 +504,10 @@
                                 const sDateTypeComponentLocation = $("#sDateTypeComponentLocation");
                                 sQuantityComponentLocation.append( options );
                                 sQuantityComponentLocation.on('change', function() {
-                                    refreshMapComponentLocation();
+                                    loadInitDataComponentLocationMap();
                                 });
                                 sDateTypeComponentLocation.on('change', function() {
-                                    refreshMapComponentLocation();
+                                    loadInitDataComponentLocationMap();
                                 });
                                 markOptionAsSelected(sQuantityComponentLocation, "5");
                                 markOptionAsSelected(sDateTypeComponentLocation, "Minutes") 
@@ -525,9 +586,9 @@
         </div>
     </div>
     <script>
-        /* global connectToEventWebSocket, initEventsGraph, refreshMapComponentLocation, initComponentEventCountGraph */
+        /* global connectToEventWebSocket, initEventsGraph, loadInitDataComponentLocationMap, initComponentEventCountGraph */
         $(document).ready(function() {
-            refreshMapComponentLocation();
+            loadInitDataComponentLocationMap();
             initEventsGraph();
             initComponentEventCountGraph();
             connectToEventWebSocket();

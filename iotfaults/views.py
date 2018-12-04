@@ -19,27 +19,130 @@ from .utils.graphdata import Graphdata
 # PRIVATE
 
 # Get data structure with information to build Fault Types Graph
-def get_db_data_struc_fault_types_count_between(start_date, end_date):
+def get_db_data_struc_types_count_between(start_date, end_date):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT iotfaults_type.name, count(0)"
+        cursor.execute("SELECT iotfaults_type.id, iotfaults_type.name, count(0)"
             + " FROM iotfaults_event"
             + " INNER JOIN iotfaults_type"
             + " ON iotfaults_type.id = iotfaults_event.type_id"
             + " WHERE iotfaults_event.time >= %s"
             + " AND iotfaults_event.time <= %s"
-            + " GROUP BY type_id" 
+            + " GROUP BY iotfaults_type.id, iotfaults_type.name" 
             + " LIMIT 100;", 
             [
                 start_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
                 end_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
             ])
         rows = cursor.fetchall()
-        data = []
+        points_data = []
         for row in rows:
-            data.append({"name": row[0], "y": row[1]})
+            points_data.append({"typeId": row[0], "name": row[1], "y": row[2]})
+            
+        metadata = {}
+        metadata["startDate"] = start_date
+        metadata["endDate"] = end_date
+        
+        data = {}
+        data["pointsData"] = points_data
+        data["metadata"] = metadata
 
     return data   
     
+# Get data structure with information to build Fault Types Graph
+def get_db_data_struc_component_types_count_between(component_id, start_date, end_date):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT iotfaults_type.name, count(0)"
+            + " FROM iotfaults_event"
+            + " INNER JOIN iotfaults_type"
+            + " ON iotfaults_type.id = iotfaults_event.type_id"
+            + " WHERE iotfaults_event.component_id = %s"
+            + " AND iotfaults_event.time >= %s"
+            + " AND iotfaults_event.time <= %s"
+            + " GROUP BY iotfaults_event.type_id" 
+            + " LIMIT 100;", 
+            [
+                component_id,
+                start_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                end_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+            ])
+        rows = cursor.fetchall()
+        points_data = []
+        for row in rows:
+            points_data.append({"name": row[0], "y": row[1]})
+            
+        metadata = {}
+        metadata["startDate"] = start_date
+        metadata["endDate"] = end_date
+        
+        data = {}
+        data["pointsData"] = points_data
+        data["metadata"] = metadata
+
+    return data   
+    
+# Get data structure with information to build Component per Fault Types Graph
+def get_db_data_struc_components_count_between(start_date, end_date):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT iotfaults_component.name, count(0)"
+            + " FROM iotfaults_event"
+            + " INNER JOIN iotfaults_component"
+            + " ON iotfaults_component.id = iotfaults_event.component_id"
+            + " WHERE iotfaults_event.time >= %s"
+            + " AND iotfaults_event.time <= %s"
+            + " GROUP BY iotfaults_event.component_id" 
+            + " LIMIT 100;", 
+            [
+                start_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                end_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+            ])
+        rows = cursor.fetchall()
+        points_data = []
+        for row in rows:
+            points_data.append({"name": row[0], "y": row[1]})
+            
+        metadata = {}
+        metadata["startDate"] = start_date
+        metadata["endDate"] = end_date
+        
+        data = {}
+        data["pointsData"] = points_data
+        data["metadata"] = metadata
+
+    return data    
+
+# Get data structure with information to build Component per Fault Types Graph
+def get_db_data_struc_type_components_count_between(type_id, start_date, end_date):
+    print("Valor de type_id " + type_id)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT iotfaults_component.name, count(0)"
+            + " FROM iotfaults_event"
+            + " INNER JOIN iotfaults_component"
+            + " ON iotfaults_component.id = iotfaults_event.component_id"
+            + " WHERE iotfaults_event.type_id = %s"
+            + " AND iotfaults_event.time >= %s"
+            + " AND iotfaults_event.time <= %s"
+            + " GROUP BY iotfaults_event.component_id" 
+            + " LIMIT 100;", 
+            [
+                type_id,
+                start_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                end_date.strftime('%Y-%m-%d %H:%M:%S.%f'),
+            ])
+        rows = cursor.fetchall()
+        points_data = []
+        for row in rows:
+            points_data.append({"name": row[0], "y": row[1]})
+            
+        metadata = {}
+        metadata["startDate"] = start_date
+        metadata["endDate"] = end_date
+        
+        data = {}
+        data["pointsData"] = points_data
+        data["metadata"] = metadata
+
+    return data    
+
 # Get data structure with information to build Component per Fault Types Graph
 def get_db_data_struc_components_date_group_count_between(start_date, end_date, str_date_group):
     with connection.cursor() as cursor:
@@ -63,15 +166,20 @@ def get_db_data_struc_components_date_group_count_between(start_date, end_date, 
         graphData = Graphdata(0)
         graphData.load(rows)
         
+        metadata = {}
+        metadata["startDate"] = start_date
+        metadata["endDate"] = end_date
+        
         data = {}
         data["categories"] = graphData.get_categories()
         data["series"] = graphData.get_series()
+        data["metadata"] = metadata
     return data    
     
 
 # Get data structure with information to build Component per Fault Types Graph 
 # between start date and end date
-def get_data_components_count_between(start_date, end_date):
+def get_data_components_date_group_count_between(start_date, end_date):
     diff = end_date - start_date
     str_date_group = '%Y'
     if diff.days <= 365:
@@ -88,7 +196,7 @@ def get_data_components_count_between(start_date, end_date):
 
 # Get data structure with information to build Component per Fault Types Graph 
 # between start date and end date
-def get_data_components_count_last(quantity, date_type):
+def get_data_components_date_group_count_last(quantity, date_type):
     end_date = timezone.now()
     
     # Default to Years
@@ -157,7 +265,7 @@ def get_db_data_struc_components_detail_count_last(quantity, date_type):
             ])
         rows = cursor.fetchall()
 
-        data = []
+        points_data = []
         for tuple in rows:
             obj = {}
             obj["id"] = str(tuple[0])
@@ -166,7 +274,16 @@ def get_db_data_struc_components_detail_count_last(quantity, date_type):
             obj["latitude"] = str(tuple[3])
             obj["longitude"] = str(tuple[4])
             obj["event_count"] = tuple[5]
-            data.append(obj)
+            points_data.append(obj)
+            
+        metadata = {}
+        metadata["startDate"] = start_date
+        metadata["endDate"] = end_date
+        
+        data = {}
+        data["pointsData"] = points_data
+        data["metadata"] = metadata
+
     return data    
 
 # RENDERS
@@ -238,9 +355,17 @@ class TypeViewSet(viewsets.ReadOnlyModelViewSet):
     def event_count_between(self, request, *args, **kwargs):
         start_date = parse(kwargs['start_date'])
         end_date = parse(kwargs['end_date'])
-        data = get_db_data_struc_fault_types_count_between(start_date, end_date)
+        data = get_db_data_struc_types_count_between(start_date, end_date)
         return Response(data)
 
+    # Return Json data about Type event count between start date and end date
+    @action(detail=False, url_path='event_count/component/(?P<component_id>[^/]+)/start/(?P<start_date>[^/]+)/end/(?P<end_date>[^/]+)')
+    def component_event_count_between(self, request, *args, **kwargs):
+        component_id = kwargs['component_id']
+        start_date = parse(kwargs['start_date'])
+        end_date = parse(kwargs['end_date'])
+        data = get_db_data_struc_component_types_count_between(component_id, start_date, end_date)
+        return Response(data)
 
 
 class ComponentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -283,22 +408,37 @@ class ComponentViewSet(viewsets.ReadOnlyModelViewSet):
     # Return Json data about Component event count between last interval 
     # determined by quantity and date type 
     # e.g. Quantity: 24 Date Type: Days is last 24 days
-    @action(detail=False, url_path='event_count/quantity/(?P<quantity>[^/]+)/date-type/(?P<date_type>[^/]+)')
-    def event_count_last(self, request, *args, **kwargs):
+    @action(detail=False, url_path='event_date_group_count/quantity/(?P<quantity>[^/]+)/date-type/(?P<date_type>[^/]+)')
+    def event_date_group_count_last(self, request, *args, **kwargs):
         quantity = int(kwargs['quantity'])
         date_type = kwargs['date_type']
-        data = get_data_components_count_last(quantity, date_type)
+        data = get_data_components_date_group_count_last(quantity, date_type)
         return Response(data)
         
     # Return Json data about Component event count between start date and end date
+    @action(detail=False, url_path='event_date_group_count/start/(?P<start_date>[^/]+)/end/(?P<end_date>[^/]+)')
+    def event_date_group_count_between(self, request, *args, **kwargs):
+        start_date = parse(kwargs['start_date'])
+        end_date = parse(kwargs['end_date'])
+        data = get_data_components_date_group_count_between(start_date, end_date)
+        return Response(data)
+        
+    # Return Json data about Type event count between start date and end date
     @action(detail=False, url_path='event_count/start/(?P<start_date>[^/]+)/end/(?P<end_date>[^/]+)')
     def event_count_between(self, request, *args, **kwargs):
         start_date = parse(kwargs['start_date'])
         end_date = parse(kwargs['end_date'])
-        data = get_data_components_count_between(start_date, end_date)
+        data = get_db_data_struc_components_count_between(start_date, end_date)
         return Response(data)
-        
 
+    # Return Json data about Type event count between start date and end date
+    @action(detail=False, url_path='event_count/type/(?P<type_id>[^/]+)/start/(?P<start_date>[^/]+)/end/(?P<end_date>[^/]+)')
+    def type_event_count_between(self, request, *args, **kwargs):
+        type_id = kwargs['type_id']
+        start_date = parse(kwargs['start_date'])
+        end_date = parse(kwargs['end_date'])
+        data = get_db_data_struc_type_components_count_between(type_id, start_date, end_date)
+        return Response(data)
     
 class CreateRetrieveViewSet(mixins.CreateModelMixin,
                             mixins.RetrieveModelMixin,

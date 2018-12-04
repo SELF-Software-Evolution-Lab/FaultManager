@@ -14,24 +14,239 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
     <script>
-    
-        /* global paintGraphPieFaultTypes, paintGraphLineUrlFaults, moment */
-        function refreshGraphPieFaultTypes() {
+
+        /* global Highcharts */
+
+        /***** TYPE EVENT COUNT PIE GRAPH *****/
+        
+        /** Var eventsGraph holds Accumulated Events Graph. */
+        var typeEventCountGraph;
+        var typeEventCountGraphMetadata;
+
+        /** 
+         * Load initial data from server into Accumulated Events graph.
+         */
+        function setDataTypeEventCountGraph(data) {
+            typeEventCountGraphMetadata = data.metadata;
+            // Remove all series
+            var len = typeEventCountGraph.series.length, i;
+            for (i=len-1;i>=0;i--) {
+                typeEventCountGraph.series[i].remove(false, false);
+            }
+            typeEventCountGraph.addSeries({name: 'Types', data: data.pointsData}, false, false);
+            typeEventCountGraph.redraw();
+        }
+
+        /** 
+         * Load initial data from server into Accumulated Events graph.
+         */
+        function loadInitDataTypeEventCountGraph() {
             const startDate = $('#dtpPieStartDate').data("DateTimePicker").date().toISOString(); 
             const endDate = $('#dtpPieEndDate').data("DateTimePicker").date().toISOString();
             var url = "{%url 'iotfaults:type-event-count-between' 'start_date_placeholder' 'end_date_placeholder' %}";
             url = url.replace('start_date_placeholder', startDate).replace('end_date_placeholder', endDate);
-            $.getJSON(url).done(paintGraphPieFaultTypes);
+            $.getJSON(url).done(setDataTypeEventCountGraph);
         }
+
+        function setDataTypeEventCountGraphTooltip(data) {
+            var categories = [];
+            var seriesData = [];
+            var len = data.pointsData.length;
+            for (i=0;i<len;i++) {
+                var point = data.pointsData[i];
+                categories.push(point["name"]);
+                seriesData.push(point["y"]);
+            }
+            
+            const chart = $("#divTypeEventCountGraph-tooltip").highcharts();
+            
+            chart.xAxis[0].setCategories(categories, false);
+            // Remove all series
+            var len = chart.series.length, i;
+            for (i=len-1;i>=0;i--) {
+                chart.series[i].remove(false, false);
+            }
+            chart.addSeries({showInLegend: false, colorByPoint: true, data: seriesData}, false, false);
+            chart.redraw();
+        }
+
+        /** 
+         * Initialize Events Graph. 
+         */
+        function initTypeEventCountGraph() {
+            typeEventCountGraph = Highcharts.chart('divTypeEventCountGraph', {
+                chart: {
+                    plotBackgroundColor: null,
+                    plotBorderWidth: null,
+                    plotShadow: false,
+                    type: 'pie'
+                },
+        		title: {
+        			text: ''
+        		},
+                tooltip: {
+                    useHTML: true,
+                    formatter: function() {
+                        var i = this.key;
+                        setTimeout( function() {
+                            $("#divTypeEventCountGraph-tooltip").highcharts({
+                                chart: {
+                                    height: 150,
+                                    width: 200,
+                                    type: 'column'
+                                },
+                                plotOptions: {
+                                    series: {
+                                        borderWidth: 0,
+                                        dataLabels: {
+                                            enabled: true
+                                        }
+                                    }
+                                },
+                                credits: {
+                                    enabled: false
+                                },
+                                title: {
+                                    text: null  
+                                },
+                                exporting: { 
+                                    enabled: false
+                                },
+                                 yAxis: {
+                                    min: 0,
+                                    title: {
+                                        text: 'Events',
+                                        margin: 0
+                                    },
+                                    labels: {
+                                        enabled: false
+                                    }
+                                }
+                            });
+                        }, 10)
         
-        function refreshGraphLineUrlFaults() {
+                        var url = "{%url 'iotfaults:component-type-event-count-between' 'type_id_placeholder' 'start_date_placeholder' 'end_date_placeholder' %}";
+                        url = url.replace('type_id_placeholder', '' + this.point.typeId);
+                        url = url.replace('start_date_placeholder', typeEventCountGraphMetadata.startDate);
+                        url = url.replace('end_date_placeholder', typeEventCountGraphMetadata.endDate);
+                        $.getJSON(url).done(setDataTypeEventCountGraphTooltip);
+                        
+                    	var txt = '<b>Type: </b> ' +  this.key + '<br>' +
+                            '<b>Percentage: </b> ' +  this.point.percentage.toFixed(2) + '%<br>' +
+                          	'<div id="divTypeEventCountGraph-tooltip"></div><canvas id="myCanvas" height="150px" width="200px"></canvas>'; 
+                        return txt;
+                    }
+                },
+                plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: true,
+                            format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                            style: {
+                                color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                            },
+                            connectorColor: 'silver'
+                        }
+                    }
+                }
+            });
+            loadInitDataTypeEventCountGraph();
+        }
+
+
+        /***** COMPONENT EVENT COUNT LINE GRAPH *****/
+        
+        /** Var eventsGraph holds Accumulated Events Graph. */
+        var componentEventCountGraph;
+        var componentEventCountGraphMetadata;
+
+        /** 
+         * Load initial data from server into Accumulated Events graph.
+         */
+        function setDataComponentEventCountGraph(data) {
+            componentEventCountGraphMetadata = data.metadata;
+            componentEventCountGraph.xAxis[0].setCategories(data.categories, false);
+            // Remove all series
+            var len = componentEventCountGraph.series.length, i;
+            for (i=len-1;i>=0;i--) {
+                componentEventCountGraph.series[i].remove(false, false);
+            }
+            len = data.series.length;
+            for (i=0;i<len;i++) {
+                componentEventCountGraph.addSeries(data.series[i], false, false);
+            }
+            componentEventCountGraph.redraw();
+        }
+
+        /** 
+         * Load initial data from server into Accumulated Events graph.
+         */
+        function loadInitDataComponentEventCountGraph() {
             const startDate = $('#dtpLineStartDate').data("DateTimePicker").date().toISOString();
             const endDate = $('#dtpLineEndDate').data("DateTimePicker").date().toISOString(); 
-            var url = "{%url 'iotfaults:component-event-count-between' 'start_date_placeholder' 'end_date_placeholder' %}";
+            var url = "{%url 'iotfaults:component-event-date-group-count-between' 'start_date_placeholder' 'end_date_placeholder' %}";
             url = url.replace('start_date_placeholder', startDate).replace('end_date_placeholder', endDate);
-            $.getJSON(url).done(paintGraphLineUrlFaults);
+            $.getJSON(url).done(setDataComponentEventCountGraph);
+        }
+
+        /** 
+         * Initialize Events Graph. 
+         */
+        function initComponentEventCountGraph() {
+            componentEventCountGraph = Highcharts.chart('divComponentEventCountGraph', {
+                
+                chart: {
+                    type: 'line',
+                    animation: false
+                },
+        		title: {
+        			text: ''
+        		},
+                yAxis: {
+                    title: {
+                        text: 'Number of Faults'
+                    }
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'right',
+                    verticalAlign: 'middle'
+                },
+            
+                plotOptions: {
+                    series: {
+                        animation: false
+                    },
+                    line: {
+                        dataLabels: {
+                            enabled: true
+                        }
+                    }
+                },
+            
+                responsive: {
+                    rules: [{
+                        condition: {
+                            maxWidth: 500
+                        },
+                        chartOptions: {
+                            legend: {
+                                layout: 'horizontal',
+                                align: 'center',
+                                verticalAlign: 'bottom'
+                            }
+                        }
+                    }]
+                }
+            
+            });
+            loadInitDataComponentEventCountGraph();
         }
         
+        /***** REPORT *****/
+
         function setDataReport(data) {
             var datatable = $('#tReport').DataTable();
             datatable.clear();
@@ -133,8 +348,9 @@
                             </div>
                         </div>
                         <script type="text/javascript">
+                            /* global moment, loadInitDataTypeEventCountGraph */
                             $(function () {
-                                t = moment()
+                                const t = moment()
                                 $('#dtpPieStartDate').datetimepicker({
                                     useCurrent: false, //Important! See issue #1075
                                     format: 'DD-MM-YYYY hh:mm A',
@@ -147,17 +363,17 @@
                                 });
                                 $("#dtpPieStartDate").on("dp.change", function (e) {
                                     $('#dtpPieEndDate').data("DateTimePicker").minDate(e.date);
-                                    refreshGraphPieFaultTypes();
+                                    loadInitDataTypeEventCountGraph();
                                 });
                                 $("#dtpPieEndDate").on("dp.change", function (e) {
                                     $('#dtpPieStartDate').data("DateTimePicker").maxDate(e.date);
-                                    refreshGraphPieFaultTypes();
+                                    loadInitDataTypeEventCountGraph();
                                 });
                             });
                         </script>                    
                     </div>
                     <div class="row">
-                        <div id="graphPieFaultTypes" style="width:100%; height:400px;"></div>
+                        <div id="divTypeEventCountGraph" style="width:100%; height:400px;"></div>
                     </div>
                 </div>
             </div>
@@ -191,8 +407,9 @@
                             </div>
                         </div>
                         <script type="text/javascript">
+                            /* global moment, loadInitDataComponentEventCountGraph */
                             $(function () {
-                                t = moment()
+                                const t = moment()
                                 $('#dtpLineStartDate').datetimepicker({
                                     useCurrent: false, //Important! See issue #1075
                                     format: 'DD-MM-YYYY hh:mm A',
@@ -205,17 +422,17 @@
                                 });
                                 $("#dtpLineStartDate").on("dp.change", function (e) {
                                     $('#dtpLineEndDate').data("DateTimePicker").minDate(e.date);
-                                    refreshGraphLineUrlFaults();
+                                    loadInitDataComponentEventCountGraph();
                                 });
                                 $("#dtpLineEndDate").on("dp.change", function (e) {
                                     $('#dtpLineStartDate').data("DateTimePicker").maxDate(e.date);
-                                    refreshGraphLineUrlFaults();
+                                    loadInitDataComponentEventCountGraph();
                                 });
                             });
                         </script>                    
                     </div>
                     <div class="row">
-                        <div id="graphLineUrlFaults" style="width:100%; height:400px;"></div>
+                        <div id="divComponentEventCountGraph" style="width:100%; height:400px;"></div>
                     </div>
             </div>
         </div>
@@ -255,7 +472,7 @@
                     </div>
 
                     <script type="text/javascript">
-                        /* global moment, refreshGraphLineUrlFaults, loadDataReport */
+                        /* global moment, loadDataReport */
                         $(function () {
                             const t = moment();
                             $('#dtpReportStartDate').datetimepicker({
@@ -358,9 +575,10 @@
     </div>
     
     <script>
+        /* global initTypeEventCountGraph, initComponentEventCountGraph, initTReport */
         $(document).ready(function() {
-            refreshGraphPieFaultTypes();
-            refreshGraphLineUrlFaults();
+            initTypeEventCountGraph();
+            initComponentEventCountGraph();
             initTReport();
         });
     </script>

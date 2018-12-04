@@ -82,3 +82,9 @@ python manage.py runserver $IP:$PORT
 
 # Mozilla Firefox Websokets
 Mozilla doen't allow WebSockets by default: about:config, network.websocket.allowInsecureFromHTTPS=True
+
+# View all valid URLs
+https://django-iot-apeream.c9users.io/iotfaults/api/x
+
+admin
+abcd4321
