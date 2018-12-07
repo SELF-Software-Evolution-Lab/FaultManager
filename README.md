@@ -2,6 +2,8 @@ Welcome to IoT Fault Monitoring Application
 
 # Configuration
 
+To see manuals go to https://github.com/SELF-Software-Evolution-Lab/FaultManager/wiki#manuals
+
 ## How to install Python 3.6 in Cloud9
 
 This application is configured to run in Python 3.6. Next is the procedure to configure Python 3.6 in Colud9 Ide
