@@ -6,15 +6,15 @@ Welcome to IoT Fault Monitoring Application
 
 This application is configured to run in Python 3.6. Next is the procedure to configure Python 3.6 in Colud9 Ide
 
-1) Download required version of Python 3.6
+1) Download required version of Python 3.6:
 
     $ wget https://www.python.org/ftp/python/3.6.3/Python-3.6.3.tgz
     
-2) Decompress
+2) Decompress:
 
     $ tar xvf Python-3.6.3.tgz
     
-3) Install
+3) Install:
 
     $ cd Python-3.6.3
     $ ./configure --enable-optimizations
@@ -26,16 +26,16 @@ This application is configured to run in Python 3.6. Next is the procedure to co
     $ python --version
     python 3.6
     
-4) Upgrade Setup Tools and Pip
+4) Upgrade Setup Tools and Pip:
 
     $ pip install setuptools --upgrade  
     $ pip install pip --upgrade
 
-5) Install Virtual Environment
+5) Install Virtual Environment:
 
     $ pip install virtualenv
     
-6) Configure Virtual Environment
+6) Configure Virtual Environment:
 
     $ virtualenv --python $(which python3.6) ~/.virtualenvs/test
     $ source ~/.virtualenvs/test/bin/activate
@@ -45,11 +45,11 @@ This application is configured to run in Python 3.6. Next is the procedure to co
 This application needs several components. See requirements.txt to see which components relates on.
 To create requirements.txt automatizated follow the next instructions
 
-1) Install Pip Requirements
+1) Install Pip Requirements:
 
     $ pip install pipreqs
     
-2) Generate requirements.txt
+2) Generate requirements.txt:
 
     $ ~/workspace (master) $ pipreqs . --force
     
@@ -83,66 +83,66 @@ To Django REST Documentation run next commands:
     
 ## Starting from the Terminal
 
-1) Change to correct virtual environment
+1) Change to correct virtual environment:
 
     $ source ~/.virtualenvs/test/bin/activate
 
-2) If neccesary run syncdb command to sync models to database and create Django's default superuser and auth system
+2) If neccesary run syncdb command to sync models to database and create Django's default superuser and auth system:
 
     $ python manage.py migrate
     
-3) Start (C9 MySql) Database   
+3) Start (C9 MySql) Database:   
 
     $ mysql-ctl start
 
-4) Start (C9 Redis) Database   
+4) Start (C9 Redis) Database:
 
     $ sudo service redis-server start
 
-5) Run Django
+5) Run Django:
 
     $ python manage.py runserver $IP:$PORT
     
 ## Running tests
 
-To tests server run following command
+To tests server run following command:
 
     $ python manage.py test iotfaults.tests
 
 # Utilities
 
-To run Python Interactive Shell
+To run Python Interactive Shell:
 
     $ python manage.py shell
     
-To Exit Python Interactive Shell
+To Exit Python Interactive Shell:
 
     $ Ctrl-D
 
-To run (C9) MySql Database Client
+To run (C9) MySql Database Client:
 
     $ mysql-ctl cli
 
-To run (C9) Redis Client
+To run (C9) Redis Client:
 
     $ redis-cli
     
-This are some Redis Configuration in C9    
+This are some Redis Configuration in C9:    
 
     Parameters: 
         Hostname - $IP (The same local IP as the application you run on Cloud9)
         Port - 6379 (The default Redis port number)
         Password - “” (No password since you can only access the DB from within the workspace)
 
-To Dump Data
+To Dump Data:
 
     $ python manage.py dumpdata > ./iotfaults/fixtures/db.json
     
-To load database
+To Load Data:
 
     $ python manage.py loaddata ./iotfaults/fixtures/type.json
     
-For data in Data load and dump see https://coderwall.com/p/mvsoyg/django-dumpdata-and-loaddata
+For info in data load and dump see https://coderwall.com/p/mvsoyg/django-dumpdata-and-loaddata
 
 Take in to account that Mozilla doesn't allow WebSockets by default to config it go to about:config and configure parameter as network.websocket.allowInsecureFromHTTPS=True
 
