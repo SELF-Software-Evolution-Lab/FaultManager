@@ -1,90 +1,150 @@
+Welcome to IoT Fault Monitoring Application
 
-     ,-----.,--.                  ,--. ,---.   ,--.,------.  ,------.
-    '  .--./|  | ,---. ,--.,--. ,-|  || o   \  |  ||  .-.  \ |  .---'
-    |  |    |  || .-. ||  ||  |' .-. |`..'  |  |  ||  |  \  :|  `--, 
-    '  '--'\|  |' '-' ''  ''  '\ `-' | .'  /   |  ||  '--'  /|  `---.
-     `-----'`--' `---'  `----'  `---'  `--'    `--'`-------' `------'
-    ----------------------------------------------------------------- 
+# Configuration
+
+## How to install Python 3.6 in Cloud9
+
+This application is configured to run in Python 3.6. Next is the procedure to configure Python 3.6 in Colud9 Ide
+
+1) Download required version of Python 3.6
+
+    $ wget https://www.python.org/ftp/python/3.6.3/Python-3.6.3.tgz
+    
+2) Decompress
+
+    $ tar xvf Python-3.6.3.tgz
+    
+3) Install
+
+    $ cd Python-3.6.3
+    $ ./configure --enable-optimizations
+    $ make -j8
+    $ sudo make altinstall
+    $ which python3.6
+    /usr/local/bin/python3.6
+    $ sudo ln -fs /usr/local/bin/python3.6 /usr/bin/python
+    $ python --version
+    python 3.6
+    
+4) Upgrade Setup Tools and Pip
+
+    $ pip install setuptools --upgrade  
+    $ pip install pip --upgrade
+
+5) Install Virtual Environment
+
+    $ pip install virtualenv
+    
+6) Configure Virtual Environment
+
+    $ virtualenv --python $(which python3.6) ~/.virtualenvs/test
+    $ source ~/.virtualenvs/test/bin/activate
+
+## Requirements
+
+This application needs several components. See requirements.txt to see which components relates on.
+To create requirements.txt automatizated follow the next instructions
+
+1) Install Pip Requirements
+
+    $ pip install pipreqs
+    
+2) Generate requirements.txt
+
+    $ ~/workspace (master) $ pipreqs . --force
+    
+
+## Some tips to install
+
+To install Python 3.6.3 check https://gist.github.com/espozbob/b86bbfbbdc78a47461037036d365ebfb
+To install DJango 2.1.2 run next command:
+
+    $ pip install Django
+    
+To install MySQL 5.7.23 check https://wpkb.org/install-mysql-5-7-at-cloud9-workspace/
+
+To Django REST Documentation run next commands:
+
+    $ sudo pip install coreapi
+    $ pip install -U drf-yasg
 
 
-Welcome to your Django project on Cloud9 IDE!
+# Running the application
 
-Your Django project is already fully setup. Just click the "Run" button to start
-the application. On first run you will be asked to create an admin user. You can
-access your application from 'https://django-iot-apeream.c9users.io/' and the admin page from 
-'https://django-iot-apeream.c9users.io/admin'.
+1) Create Django's default superuser and auth system
 
+    e.g:
+    $ python manage.py createsuperuser
+    Username: admin
+    Email address: admin@example.com
+    Password: abcd4321
+    Password (again): abcd4321
+    Superuser created successfully.
+    
 ## Starting from the Terminal
 
-In case you want to run your Django application from the terminal just run:
+1) Change to correct virtual environment
 
-1) Run syncdb command to sync models to database and create Django's default superuser and auth system
+    $ source ~/.virtualenvs/test/bin/activate
+
+2) If neccesary run syncdb command to sync models to database and create Django's default superuser and auth system
 
     $ python manage.py migrate
+    
+3) Start (C9 MySql) Database   
 
-2) Run Django
+    $ mysql-ctl start
+
+4) Start (C9 Redis) Database   
+
+    $ sudo service redis-server start
+
+5) Run Django
 
     $ python manage.py runserver $IP:$PORT
     
-## Configuration
+## Running tests
 
-You can configure your Python version and `PYTHONPATH` used in
-Cloud9 > Preferences > Project Settings > Language Support.
+To tests server run following command
 
-## Support & Documentation
+    $ python manage.py test iotfaults.tests
 
-Django docs can be found at https://www.djangoproject.com/
+# Utilities
 
-You may also want to follow the Django tutorial to create your first application:
-https://docs.djangoproject.com/en/1.9/intro/tutorial01/
+To run Python Interactive Shell
 
-Visit http://docs.c9.io for support, or to learn more about using Cloud9 IDE.
-To watch some training videos, visit http://www.youtube.com/user/c9ide
-
-## Installed
-Python 3.6.3: https://gist.github.com/espozbob/b86bbfbbdc78a47461037036d365ebfb
-DJango 2.1.2: pip install Django
-MySQL 5.7.23: https://wpkb.org/install-mysql-5-7-at-cloud9-workspace/
-
-# For Django REST Documentation
-sudo pip install coreapi
-pip install -U drf-yasg
-
-# Requirements
-pip install pipreqs
-~/workspace (master) $ pipreqs . --force
+    $ python manage.py shell
     
-# Virtual Environment
-source ~/.virtualenvs/test/bin/activate
+To Exit Python Interactive Shell
 
-# Python Interactive Shell
-python manage.py shell
-Exit: Ctrl-D
+    $ Ctrl-D
 
-# C9 MySql Database
-Start: mysql-ctl start
-Client: mysql-ctl cli
+To run (C9) MySql Database Client
 
-# C9 Redis
-Start: sudo service redis-server start
-Client: redis-cli
-Prameters: Hostname - $IP (The same local IP as the application you run on Cloud9)
-           Port - 6379 (The default Redis port number)
-           Password - “” (No password since you can only access the DB from within the workspace)
+    $ mysql-ctl cli
 
-# DumpData
-Dump: python manage.py dumpdata > ./iotfaults/fixtures/db.json
-Load: python manage.py loaddata ./iotfaults/fixtures/type.json
-Info: https://coderwall.com/p/mvsoyg/django-dumpdata-and-loaddata
+To run (C9) Redis Client
 
-# Run Python server
-python manage.py runserver $IP:$PORT
+    $ redis-cli
+    
+This are some Redis Configuration in C9    
 
-# Mozilla Firefox Websokets
-Mozilla doen't allow WebSockets by default: about:config, network.websocket.allowInsecureFromHTTPS=True
+    Parameters: 
+        Hostname - $IP (The same local IP as the application you run on Cloud9)
+        Port - 6379 (The default Redis port number)
+        Password - “” (No password since you can only access the DB from within the workspace)
 
-# View all valid URLs
-https://django-iot-apeream.c9users.io/iotfaults/api/x
+To Dump Data
 
-admin
-abcd4321
+    $ python manage.py dumpdata > ./iotfaults/fixtures/db.json
+    
+To load database
+
+    $ python manage.py loaddata ./iotfaults/fixtures/type.json
+    
+For data in Data load and dump see https://coderwall.com/p/mvsoyg/django-dumpdata-and-loaddata
+
+Take in to account that Mozilla doesn't allow WebSockets by default to config it go to about:config and configure parameter as network.websocket.allowInsecureFromHTTPS=True
+
+To check all avalaible URLs type https://django-iot-apeream.c9users.io/iotfaults/api/x
+

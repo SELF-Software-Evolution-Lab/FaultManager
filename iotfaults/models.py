@@ -17,6 +17,9 @@ class Type(models.Model):
     def __str__(self): 
         return str(self.id) + ' - ' + self.name
 
+    class Meta:
+        ordering = ['-id']
+
 class Component(models.Model):
     """Defines a fault type"""
     name = models.CharField(max_length=100, null=False)
@@ -26,6 +29,9 @@ class Component(models.Model):
     def __str__(self): 
         return str(self.id) + ' - ' + self.name
 
+    class Meta:
+        ordering = ['-id']
+        
 class Event(models.Model):
     """Defines a fault event"""
     component = models.ForeignKey(Component, related_name='events', 
@@ -40,6 +46,9 @@ class Event(models.Model):
     #     if self.time is None:
     #         self.time
     #     super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['-id']
 
 
 ## Forms
