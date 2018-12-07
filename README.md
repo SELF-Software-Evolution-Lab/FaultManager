@@ -6,15 +6,15 @@ Welcome to IoT Fault Monitoring Application
 
 This application is configured to run in Python 3.6. Next is the procedure to configure Python 3.6 in Colud9 Ide
 
-1) Download required version of Python 3.6:
+Download required version of Python 3.6:
 
     $ wget https://www.python.org/ftp/python/3.6.3/Python-3.6.3.tgz
     
-2) Decompress:
+Decompress:
 
     $ tar xvf Python-3.6.3.tgz
     
-3) Install:
+Install:
 
     $ cd Python-3.6.3
     $ ./configure --enable-optimizations
@@ -26,16 +26,16 @@ This application is configured to run in Python 3.6. Next is the procedure to co
     $ python --version
     python 3.6
     
-4) Upgrade Setup Tools and Pip:
+Upgrade Setup Tools and Pip:
 
     $ pip install setuptools --upgrade  
     $ pip install pip --upgrade
 
-5) Install Virtual Environment:
+Install Virtual Environment:
 
     $ pip install virtualenv
     
-6) Configure Virtual Environment:
+Configure Virtual Environment:
 
     $ virtualenv --python $(which python3.6) ~/.virtualenvs/test
     $ source ~/.virtualenvs/test/bin/activate
@@ -45,11 +45,11 @@ This application is configured to run in Python 3.6. Next is the procedure to co
 This application needs several components. See requirements.txt to see which components relates on.
 To create requirements.txt automatizated follow the next instructions
 
-1) Install Pip Requirements:
+Install Pip Requirements:
 
     $ pip install pipreqs
     
-2) Generate requirements.txt:
+Generate requirements.txt:
 
     $ ~/workspace (master) $ pipreqs . --force
     
@@ -71,7 +71,7 @@ To Django REST Documentation run next commands:
 
 # Running the application
 
-1) Create Django's default superuser and auth system
+Create Django's default superuser and auth system
 
     e.g:
     $ python manage.py createsuperuser
@@ -83,23 +83,23 @@ To Django REST Documentation run next commands:
     
 ## Starting from the Terminal
 
-1) Change to correct virtual environment:
+Change to correct virtual environment:
 
     $ source ~/.virtualenvs/test/bin/activate
 
-2) If neccesary run syncdb command to sync models to database and create Django's default superuser and auth system:
+If neccesary run syncdb command to sync models to database and create Django's default superuser and auth system:
 
     $ python manage.py migrate
     
-3) Start (C9 MySql) Database:   
+Start (C9 MySql) Database:   
 
     $ mysql-ctl start
 
-4) Start (C9 Redis) Database:
+Start (C9 Redis) Database:
 
     $ sudo service redis-server start
 
-5) Run Django:
+Run Django:
 
     $ python manage.py runserver $IP:$PORT
     
